@@ -3,13 +3,14 @@
 import argparse
 import json
 import os
-from pathlib import Path
 import pwd
 import stat
+
 # Only a fixed systemctl executable and fixed argument arrays are used below.
 import subprocess  # nosec B404
 import sys
 import tempfile
+from pathlib import Path
 
 SOURCE = Path(__file__).resolve().parent.parent
 LIB = Path("/usr/local/lib/omafans")
@@ -24,7 +25,7 @@ def systemctl(*args, check=True):
     # Callers supply literal service operations; no shell or user arguments.
     return subprocess.run(  # nosec B603
         ["/usr/bin/systemctl", *args], check=check, timeout=30,
-        stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        stdin=subprocess.DEVNULL, capture_output=True,
         env={"PATH": "/usr/bin:/bin", "LANG": "C"},
     )
 

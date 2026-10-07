@@ -1,41 +1,36 @@
 # OmaFans security and verification record
 
-Review date: 2026-10-07. Candidate version: **0.1.0**.
+Review date: 2026-10-07. Version: **0.1.0**.
 
-The source in this repository was reviewed before public publication. The
-original local widget was separated from its machine-specific integration,
-renamed, and given a new privileged boundary. The scope is an experimental
-source release for review and testing, not a claim of hardware certification.
+This record summarises the threat model, protections and verification for
+the experimental 0.1.0 release. It is not a claim of hardware certification.
 
-## Changes resulting from the review
+## Threat model
 
-- Replaced root reads of user-writable state and heartbeat files with a bounded
-  Unix-socket protocol authenticated using kernel peer credentials. The daemon
-  has no user-selected path, executable or shell-command interface.
-- Removed names and home paths from the source and system unit. Repository
-  commits use a project identity. The public GitHub repository owner remains
-  visible; privacy checks do not imply anonymous hosting.
-- Added strict settings validation, bounded JSON and request deadlines. Invalid
+The root daemon writes ThinkPad fan controls. Its attack surface is a local
+Unix socket that only one authorised desktop account can use. Risks include
+untrusted input from that account, a hung or crashed controller leaving the
+fan in manual mode, and hardware or sensor faults. See [SECURITY.md](../SECURITY.md)
+for the full trust model.
+
+## Protections
+
+- A bounded Unix-socket protocol authenticated using kernel peer credentials
+  (mode 0600, exact UID check). There is no user-selected path, executable or
+  shell-command interface.
+- Strict settings validation, bounded JSON and request deadlines. Invalid
   types, oversized data, duplicate keys, deep nesting and non-finite values are
   rejected without changing fan settings.
-- Replaced file timestamps with a daemon-owned heartbeat clock that includes
-  suspend time. Stale or invalid heartbeat ages return requests to Auto;
-  reconnecting does not silently resume an old manual setting.
-- Made watchdog arming and hardware write/read-back failures visible. Manual
-  control depends on a watchdog, and faults latch control off.
-- An independent source review caught watchdog starvation during repeated
-  recovery attempts. The fix stops further writes after the initial fault
-  recovery and disables automatic systemd restart. A regression reproduces
-  persistent write failures and verifies that 100 subsequent ticks and
-  heartbeats cannot reset the watchdog again.
-- Removed the broken secondary QML parsing path, serialized helper calls, and
-  added a helper timeout. The widget never runs privileged setup itself.
-- Added an explicit installer/remover, protected system files, a hardened
-  system unit, license, documentation, fixture tests and CI security checks.
-- Live installation exposed a socket setup ordering error under the restricted
-  capabilities: changing ownership before setting its mode failed with EPERM.
-  The fix sets mode 0600 before transferring ownership, without adding
-  capabilities. Startup and stop/restart then passed under the actual unit.
+- A daemon-owned heartbeat clock that includes suspend time. Stale or invalid
+  heartbeats return control to Auto, and reconnecting does not resume an old
+  manual setting.
+- A kernel watchdog is armed before manual control. Watchdog arming and
+  hardware write or read-back failures latch a visible fault.
+- After its first recovery attempt, the daemon makes no further writes, so it
+  cannot keep resetting the watchdog. There is no automatic systemd restart, and
+  a regression test covers persistent write failures.
+- The widget never elevates privileges. The installer, remover and hardened
+  system unit are separate, explicit steps.
 
 ## Executed local evidence
 
@@ -44,22 +39,19 @@ source release for review and testing, not a claim of hardware certification.
 | `python3 -m unittest discover -s tests -v` | 35 tests passed; fake hardware plus real Unix socket pairs |
 | QtTest service suite | Eight behavior tests plus init/cleanup passed; no failures |
 | Bandit 1.9.4 | No outstanding findings on daemon, client and setup code; two narrow reviewed annotations described in SECURITY.md |
-| Gitleaks 8.30.1 | No secrets found in candidate source; full-history scan also required before publication |
-| Targeted personal-information scan | No personal names, personal mail addresses or home paths in candidate files |
+| Gitleaks 8.30.1 | No secrets found; CI scans the full Git history |
 | Portable Omarchy validation | Valid manifest and entry points |
 | Installed `omarchy plugin validate .` | Passed on Omarchy 4.0.4-1 |
 | `systemd-analyze verify system/omafans.service` | Passed on systemd 261; syntax/dependency validation only |
 | QML static analysis with installed host imports | No parse/import errors; dynamic host properties and a Quickshell enum produce unresolved static-type warnings |
 | Live hosted widget | Monitoring status, panel open/close, disable/re-enable, rescan and fictional fixture loading passed |
-| Initial demo restoration | Original shell configuration bytes, workspace and cursor restored; temporary plugin removed before the later authorized live migration |
 | Preview | Real hosted QML with fictional readings; panel-only screenshot, manually inspected |
 | Installation/update/removal fixtures | Fixed-file install/update/remove round trip passed; dry run, conflicts and failed-stop retention tested without root writes |
-| Live system installation | Root-owned daemon runs under the supplied systemd unit on a T480s; service enabled, former controller stopped/disabled |
+| Live system installation | Root-owned daemon runs under the supplied systemd unit on a T480s |
 | Real hardware control and recovery | Manual, Curve, Auto, heartbeat expiry, paused-daemon kernel watchdog event and graceful stop/restart passed; [measurements and source identity](hardware-validation.md) |
-| Live Git installation/update | Native add and update from this public repository passed on the same T480s; new widget enabled and former widget disabled |
 
 Exact source identity and CI results are attached to the Git commit and its
-**Checks** workflow on GitHub. Rerun these checks when changing the candidate;
+**Checks** workflow on GitHub. Rerun these checks after any change;
 this document is not evidence for a later untested commit.
 
 ## Advisory findings reviewed
@@ -89,10 +81,8 @@ marketplace approval or a guarantee of adequate cooling.
   fans are not validated.
 - The UI was exercised on one horizontal-bar display. Vertical placement,
   multiple monitors and full-shell restart behavior remain unverified.
-- No separate machine has been tested. Native add/update passed on the live
-  laptop; removal of the newly installed live system was not performed because
-  it is now the active controller. Installation/removal fixtures and the earlier
-  temporary-widget lifecycle checks remain separate evidence.
+- No other machine has been tested. Native add and update from Git passed on
+  the T480s. Removal was tested with fixtures only, not on the live system.
 - The root daemon uses only the standard library. Python, kernel, systemd, Qt
   and Quickshell patch levels are the operating system's responsibility; a
   Python dependency scanner cannot certify those components.

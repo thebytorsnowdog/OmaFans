@@ -2,9 +2,9 @@
 """Portable repository contract, privilege invariants, and privacy checks."""
 import ast
 import json
-from pathlib import Path
 import re
 import sys
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -38,7 +38,7 @@ def check():
         elif isinstance(node, ast.ImportFrom):
             require(node.module in allowed, "Unreviewed daemon import")
     # Scan the candidate tree, excluding only generated/local VCS artifacts.
-    excluded = {".git", "__pycache__", ".venv", "audit-results"}
+    excluded = {".git", "__pycache__", ".venv", ".ruff_cache", "audit-results"}
     for path in ROOT.rglob("*"):
         relative = path.relative_to(ROOT)
         if set(relative.parts) & excluded:

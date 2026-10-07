@@ -1,14 +1,12 @@
 import copy
-import json
 import os
-from pathlib import Path
 import socket
 import stat
-import struct
 import tempfile
 import threading
 import time
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 import omafans as app

@@ -34,6 +34,30 @@ control. See [verification scope](docs/SECURITY_REVIEW.md).
 > releases control on stop). If the daemon is not responding, run
 > `echo level auto | sudo tee /proc/acpi/ibm/fan`. To disable control completely, run
 > `sudo /usr/bin/python3 -I scripts/setup.py remove` and reboot.
+>
+> **Overheat safeguard limit:** at 92°C (`temp1_input` only), OmaFans requests
+> level 7, the highest *normal* level. It does not use the driver's
+> disengaged/full-speed mode, because OmaFans deliberately never bypasses
+> the firmware's fan regulation (see [SECURITY.md](SECURITY.md)). Level 7 may
+> therefore be slower than the fan's absolute maximum.
+>
+> **Not tested on hardware:** suspend/resume, reboot, thermal stress (including
+> a live 92°C event) and any model other than the T480s.
+
+## Quick start
+
+```bash
+# 1. Monitoring only (no root, no kernel changes)
+omarchy plugin add https://github.com/thebytorsnowdog/omafans.git
+omarchy plugin enable community.omafans --section right
+
+# 2. Optional fan control: preview, install, then reboot
+cd ~/.config/omarchy/plugins/community.omafans
+python3 scripts/setup.py install --user "$(id -un)" --dry-run
+sudo /usr/bin/python3 -I scripts/setup.py install --user "$(id -un)" --enable-kernel-control
+```
+
+Read [Optional fan control](#optional-fan-control) before step 2. To uninstall, see [Remove](#remove).
 
 ## Requirements
 
