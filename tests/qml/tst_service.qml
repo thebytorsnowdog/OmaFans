@@ -25,6 +25,19 @@ TestCase {
     compare(service.rpm, null)
     verify(service.error.length > 0)
   }
+  function test_sensor_recovery_reenables_controls_and_clears_old_error() {
+    service.applyStatus(JSON.stringify({ available: true, service: true,
+      control_enabled: false, mode: "auto", temperature: 63,
+      error: "Temperature sensor unavailable" }), 1)
+    compare(service.controlEnabled, false)
+    verify(service.error.length > 0)
+    service.applyStatus(JSON.stringify({ available: true, service: true,
+      control_enabled: true, mode: "auto", temperature: 64, error: "" }), 0)
+    compare(service.controlEnabled, true)
+    compare(service.temperature, 64)
+    compare(service.mode, "auto")
+    compare(service.error, "")
+  }
   function test_array_response_rejected() {
     service.applyStatus("[]", 0)
     compare(service.serviceUp, false)

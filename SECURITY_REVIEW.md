@@ -1,6 +1,6 @@
 # OmaFans security and verification record
 
-Review date: 2026-10-07. Candidate version: **0.1.0**.
+Review date: 2026-10-07. Candidate version: **0.1.1**.
 
 The source in this repository was reviewed before public publication. The
 original local widget was separated from its machine-specific integration,
@@ -36,13 +36,18 @@ source release for review and testing, not a claim of hardware certification.
   capabilities: changing ownership before setting its mode failed with EPERM.
   The fix sets mode 0600 before transferring ownership, without adding
   capabilities. Startup and stop/restart then passed under the actual unit.
+- A later sensor read failure left control permanently unavailable even after
+  current readings returned. Sensor-only recovery now requires successful Auto
+  fallback, watchdog disarming and three spaced valid observations. Recovery
+  makes no writes and cannot resume an old Manual/Curve request. Other faults
+  remain latched. Fault and recovery transitions are recorded in the journal.
 
 ## Executed local evidence
 
 | Check | Observed result |
 | --- | --- |
-| `python3 -m unittest discover -s tests -v` | 35 tests passed; fake hardware plus real Unix socket pairs |
-| QtTest service suite | Eight behavior tests plus init/cleanup passed; no failures |
+| `python3 -m unittest discover -s tests -v` | 41 tests passed; fake hardware plus real Unix socket pairs; sensor recovery, failed-fallback latching and startup sensor gaps covered |
+| QtTest service suite | Nine behavior tests plus init/cleanup passed; no failures; recovered status re-enables controls and clears the stale error |
 | Bandit 1.9.4 | No outstanding findings on daemon, client and setup code; two narrow reviewed annotations described in SECURITY.md |
 | Gitleaks 8.30.1 | No secrets found in candidate source; full-history scan also required before publication |
 | Targeted personal-information scan | No personal names, personal mail addresses or home paths in candidate files |

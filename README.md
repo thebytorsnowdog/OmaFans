@@ -106,8 +106,13 @@ already-selected highest normal level 7 rather than switching it to Auto.
 Invalid sensor data or a failed watchdog/write/read-back latches a fault and
 attempts firmware Auto, with highest normal speed as a fallback. After that
 attempt it stops making repeated writes so it cannot indefinitely postpone the
-watchdog. Diagnose a fault before explicitly restarting the service. There is
-no automatic daemon restart loop.
+watchdog. A temporary temperature-sensor failure can recover only if firmware
+Auto was verified and watchdog disarming succeeded: three valid readings below
+92°C, at least two seconds apart with no gap over four seconds, must confirm
+Auto remains active. Control then becomes available in **Auto**; choose Manual
+or Curve again to resume it. Recovery makes no hardware writes. Other faults,
+including failed recovery or a highest-speed fallback, require diagnosis and
+an explicit service restart. There is no automatic daemon restart loop.
 
 At `temp1_input >= 92°C`, the daemon requests the highest **normal** fan level
 (255/level 7), even without a current heartbeat. This is not the driver's

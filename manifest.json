@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "community.omafans",
   "name": "OmaFans",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": "OmaFans contributors",
   "license": "MIT",
   "description": "ThinkPad fan monitoring and control for Omarchy: automatic, manual and temperature-curve modes.",

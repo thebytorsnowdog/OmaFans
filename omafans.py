@@ -29,6 +29,7 @@ CLIENT_TIMEOUT = 2.0
 HEARTBEAT_TIMEOUT = 15.0
 WATCHDOG_SECONDS = 45
 POLL_SECONDS = 2.0
+SENSOR_RECOVERY_SAMPLES = 3
 OVERHEAT_MC = 92000
 DEFAULT_CURVE = [[40, 30], [55, 40], [65, 60], [75, 80], [85, 100]]
 
@@ -210,6 +211,9 @@ class Controller:
         self.error = ""
         self.notice = ""
         self.fault = False
+        self.sensor_recoverable = False
+        self.sensor_good_samples = 0
+        self.sensor_last_sample = None
 
     def safe(self):
         """Firmware auto, or highest normal speed if auto is unsupported.
@@ -228,25 +232,74 @@ class Controller:
         full = hw.write("pwm1", 255) if enabled else False
         return armed and enabled and full and hw.read("pwm1") == 255
 
-    def fail(self, message):
+    def fail(self, message, sensor=False):
         self.fault = True
         self.error = message
-        if not self.safe():
+        rescued = self.safe()
+        # Retry sensor observation only after verified firmware Auto AND a
+        # successful watchdog disarm. Manual fallback cannot safely recover.
+        self.sensor_recoverable = sensor and rescued and not self.notice
+        self.sensor_good_samples = 0
+        self.sensor_last_sample = None
+        if not rescued:
             self.error += "; safety fallback failed"
+        if self.sensor_recoverable:
+            self.error += "; firmware Auto active; waiting for stable readings"
+        print("OmaFans: " + self.error, file=sys.stderr, flush=True)
         return False
+
+    def recover_sensor(self):
+        """Observe only; never write or reset the watchdog while faulted."""
+        if not self.sensor_recoverable:
+            return False
+        hw = self.hardware
+        temperature = hw.temperature()
+        now = self.clock()
+        waiting = ""
+        if not hw.control_ready():
+            waiting = "Sensor recovery blocked: kernel fan control unavailable"
+        elif hw.read("pwm1_enable") != 2:
+            waiting = "Sensor recovery blocked: firmware Auto could not be confirmed"
+        elif temperature is None:
+            waiting = "Temperature sensor unavailable; firmware Auto active; waiting for stable readings"
+        elif temperature >= OVERHEAT_MC:
+            waiting = "Sensor recovery paused: high temperature; firmware Auto active"
+        if waiting:
+            self.sensor_good_samples = 0
+            self.sensor_last_sample = None
+            self.error = waiting
+            return False
+        age = None if self.sensor_last_sample is None else now - self.sensor_last_sample
+        if age is None or not 0 <= age <= 2 * POLL_SECONDS:
+            self.sensor_good_samples = 1
+            self.sensor_last_sample = now
+        elif age >= POLL_SECONDS:
+            self.sensor_good_samples += 1
+            self.sensor_last_sample = now
+        if self.sensor_good_samples < SENSOR_RECOVERY_SAMPLES:
+            self.error = "Temperature sensor recovering; firmware Auto active"
+            return False
+        self.fault = False
+        self.sensor_recoverable = False
+        self.state["mode"] = "auto"
+        self.last_heartbeat = None
+        self.error = ""
+        print("OmaFans: temperature sensor recovered; firmware Auto remains active",
+              file=sys.stderr, flush=True)
+        return True
 
     def tick(self):
         hw = self.hardware
         if self.fault:
             # Do not re-arm or write here: a failed rescue must let the kernel
             # watchdog expire. The service has no automatic restart loop.
-            return False
+            return self.recover_sensor()
         if not hw.control_ready():
             return self.fail("Kernel fan control is unavailable")
         temperature = hw.temperature()
         age = None if self.last_heartbeat is None else self.clock() - self.last_heartbeat
         if temperature is None:
-            return self.fail("Temperature sensor unavailable")
+            return self.fail("Temperature sensor unavailable", sensor=True)
         if temperature >= OVERHEAT_MC:
             target = 100
             self.state["mode"] = "auto"
@@ -353,7 +406,7 @@ def serve():
     if not stat.S_ISDIR(info.st_mode) or info.st_uid != 0 or info.st_mode & 0o022:
         raise ValueError("Unsafe runtime directory")
     controller = Controller(hw)
-    if not controller.tick():
+    if not controller.tick() and not controller.sensor_recoverable:
         raise ValueError(controller.error)
     running = True
     def stop(signum, frame):
