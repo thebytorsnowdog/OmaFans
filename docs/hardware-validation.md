@@ -16,7 +16,19 @@ The runtime was unchanged. Selected raw observations are in
 | Fresh request after recovery | A new Curve request was accepted, with manual hardware mode and watchdog 45 seconds; cleanup verified healthy firmware Auto and cleared the RTC alarm |
 | Full CPU load | **Stopped at the test limit**, after about 3 seconds: eight busy workers, approximately 100% sampled CPU use, CPU peak 96°C, control sensor 70°C |
 | Reduced CPU load | **Stopped at the test limit**, after about 13 seconds: eight workers at 40% duty, 51.4% average sampled system CPU use, CPU peak 95°C, control sensor peak 90°C |
-| Reboot | **Not run.** A temporary read-only startup observer is prepared; a real reboot, startup observations and a post-boot installed-source hash check are still required |
+| Reboot | **Passed.** A changed boot was verified; the daemon started active/enabled with the kernel fan-control setting retained, the old controller inactive, and working temperature/fan status in firmware Auto |
+| Controls and source after reboot | The panel opened/closed and fresh Curve/Auto requests passed with hardware read-back. A privileged read verified the unchanged controller SHA-256, root ownership and absence of group/world write permission |
+
+The reboot observer recorded five consecutive healthy daemon, shell-service
+and widget samples from **4.28 through 12.74 seconds after the observer started**.
+These are post-login observation times, not the total boot duration. Its first
+shell-service snapshot was not yet initialized, while the daemon already had
+valid readings; the following samples showed all three available. Firmware
+Auto and watchdog disarming were observed throughout. The observer deliberately
+kept the overall result pending until a separate privileged check verified the
+installed controller's identity. That check and the subsequent panel/control
+checks passed. The temporary startup hook has been removed, and the laptop was
+left in its original post-boot Auto mode.
 
 Both load attempts planned 120 seconds, with independent CPU and controller
 sensor readings and early-stop thresholds of **96°C CPU** and **90°C controller
@@ -52,7 +64,7 @@ documented-contract evaluation and remaining live control checks exited 0.
 Private logs and full observations are retained locally; the public JSON omits
 account details, absolute personal paths, process/boot identifiers and full logs.
 
-**Outstanding:** reboot, sustained thermal stress, repeated sleep cycles,
+**Outstanding:** sustained thermal stress, repeated sleep/reboot cycles,
 physical fan/sensor fault injection, secondary fans and other laptop models.
 The system was left in verified firmware Auto after these checks.
 
@@ -96,9 +108,9 @@ Validation on the same T480s included:
 Selected results are in [sensor-recovery-validation.json](sensor-recovery-validation.json).
 The earlier measurements below apply to the initial runtime commit, and are
 kept as historical evidence rather than being attributed to the new source.
-The later lifecycle and load checks above supersede the untested sleep/load
-status of this earlier run. Reboot remains untested; sustained thermal stress
-has not passed.
+The later lifecycle and load checks above supersede the untested sleep/load/
+reboot status of this earlier run. One real sleep/resume and one reboot passed;
+sustained thermal stress has not passed.
 
 ## Initial installation — 0.1.0
 

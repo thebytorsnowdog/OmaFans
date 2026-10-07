@@ -1505,9 +1505,886 @@
     }
   },
   "reboot": {
-    "result": "not_run",
-    "observer_prepared": true,
-    "requires": "actual reboot, changed-boot startup observations and privileged installed-source hash verification",
-    "observer_installed": true
+    "result": "passed",
+    "date_utc": "2026-10-07T15:37:46.932837+00:00",
+    "reboot_observed": true,
+    "functionality_result": "passed",
+    "firmware_auto_observed": true,
+    "controller_sha256_before_reboot": "f721307de59a4562c3e97671585349b45dd8d1d96d4c3046a61c74afa0361b25",
+    "installed_source_verification": {
+      "result": "passed",
+      "reboot_observed": true,
+      "installed_controller_sha256": "f721307de59a4562c3e97671585349b45dd8d1d96d4c3046a61c74afa0361b25",
+      "installed_file_root_owned": true,
+      "installed_file_not_group_or_world_writable": true
+    },
+    "observer_timing": "seconds from post-login observer start, not power-on time",
+    "initial_shell_service_snapshot_ready": false,
+    "first_all_healthy_sample_seconds": 4.28,
+    "consecutive_healthy_samples": 5,
+    "startup_samples": [
+      {
+        "seconds": 2.15,
+        "status": {
+          "mode": "auto",
+          "manual_percent": 60,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "available": true,
+          "service": true,
+          "control_enabled": true,
+          "rpm": 4076,
+          "percent": null,
+          "temperature": 72.0,
+          "error": "",
+          "notice": "",
+          "ok": true
+        },
+        "shell_service": {
+          "available": false,
+          "service": false,
+          "control_enabled": false,
+          "mode": "auto",
+          "rpm": null,
+          "percent": null,
+          "temperature": null,
+          "manual_percent": 60,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "error": "",
+          "notice": ""
+        },
+        "widget": {
+          "available": true,
+          "service": true,
+          "control_enabled": true,
+          "mode": "auto",
+          "rpm": 4231,
+          "percent": null,
+          "temperature": 72,
+          "manual_percent": 60,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "error": "",
+          "notice": ""
+        },
+        "pwm1_enable": 2,
+        "watchdog_seconds": 0,
+        "kernel_fan_control": "Y",
+        "active": "active",
+        "enabled": "enabled",
+        "legacy_active": false
+      },
+      {
+        "seconds": 4.28,
+        "status": {
+          "mode": "auto",
+          "manual_percent": 60,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "available": true,
+          "service": true,
+          "control_enabled": true,
+          "rpm": 4573,
+          "percent": null,
+          "temperature": 78.0,
+          "error": "",
+          "notice": "",
+          "ok": true
+        },
+        "shell_service": {
+          "available": true,
+          "service": true,
+          "control_enabled": true,
+          "mode": "auto",
+          "rpm": 4437,
+          "percent": null,
+          "temperature": 74,
+          "manual_percent": 60,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "error": "",
+          "notice": ""
+        },
+        "widget": {
+          "available": true,
+          "service": true,
+          "control_enabled": true,
+          "mode": "auto",
+          "rpm": 4437,
+          "percent": null,
+          "temperature": 74,
+          "manual_percent": 60,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "error": "",
+          "notice": ""
+        },
+        "pwm1_enable": 2,
+        "watchdog_seconds": 0,
+        "kernel_fan_control": "Y",
+        "active": "active",
+        "enabled": "enabled",
+        "legacy_active": false
+      },
+      {
+        "seconds": 6.4,
+        "status": {
+          "mode": "auto",
+          "manual_percent": 60,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "available": true,
+          "service": true,
+          "control_enabled": true,
+          "rpm": 4680,
+          "percent": null,
+          "temperature": 78.0,
+          "error": "",
+          "notice": "",
+          "ok": true
+        },
+        "shell_service": {
+          "available": true,
+          "service": true,
+          "control_enabled": true,
+          "mode": "auto",
+          "rpm": 4636,
+          "percent": null,
+          "temperature": 78,
+          "manual_percent": 60,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "error": "",
+          "notice": ""
+        },
+        "widget": {
+          "available": true,
+          "service": true,
+          "control_enabled": true,
+          "mode": "auto",
+          "rpm": 4636,
+          "percent": null,
+          "temperature": 78,
+          "manual_percent": 60,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "error": "",
+          "notice": ""
+        },
+        "pwm1_enable": 2,
+        "watchdog_seconds": 0,
+        "kernel_fan_control": "Y",
+        "active": "active",
+        "enabled": "enabled",
+        "legacy_active": false
+      },
+      {
+        "seconds": 8.52,
+        "status": {
+          "mode": "auto",
+          "manual_percent": 60,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "available": true,
+          "service": true,
+          "control_enabled": true,
+          "rpm": 4694,
+          "percent": null,
+          "temperature": 79.0,
+          "error": "",
+          "notice": "",
+          "ok": true
+        },
+        "shell_service": {
+          "available": true,
+          "service": true,
+          "control_enabled": true,
+          "mode": "auto",
+          "rpm": 4716,
+          "percent": null,
+          "temperature": 79,
+          "manual_percent": 60,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "error": "",
+          "notice": ""
+        },
+        "widget": {
+          "available": true,
+          "service": true,
+          "control_enabled": true,
+          "mode": "auto",
+          "rpm": 4716,
+          "percent": null,
+          "temperature": 79,
+          "manual_percent": 60,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "error": "",
+          "notice": ""
+        },
+        "pwm1_enable": 2,
+        "watchdog_seconds": 0,
+        "kernel_fan_control": "Y",
+        "active": "active",
+        "enabled": "enabled",
+        "legacy_active": false
+      },
+      {
+        "seconds": 10.63,
+        "status": {
+          "mode": "auto",
+          "manual_percent": 60,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "available": true,
+          "service": true,
+          "control_enabled": true,
+          "rpm": 4690,
+          "percent": null,
+          "temperature": 76.0,
+          "error": "",
+          "notice": "",
+          "ok": true
+        },
+        "shell_service": {
+          "available": true,
+          "service": true,
+          "control_enabled": true,
+          "mode": "auto",
+          "rpm": 4716,
+          "percent": null,
+          "temperature": 79,
+          "manual_percent": 60,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "error": "",
+          "notice": ""
+        },
+        "widget": {
+          "available": true,
+          "service": true,
+          "control_enabled": true,
+          "mode": "auto",
+          "rpm": 4716,
+          "percent": null,
+          "temperature": 79,
+          "manual_percent": 60,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "error": "",
+          "notice": ""
+        },
+        "pwm1_enable": 2,
+        "watchdog_seconds": 0,
+        "kernel_fan_control": "Y",
+        "active": "active",
+        "enabled": "enabled",
+        "legacy_active": false
+      },
+      {
+        "seconds": 12.74,
+        "status": {
+          "mode": "auto",
+          "manual_percent": 60,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "available": true,
+          "service": true,
+          "control_enabled": true,
+          "rpm": 4685,
+          "percent": null,
+          "temperature": 69.0,
+          "error": "",
+          "notice": "",
+          "ok": true
+        },
+        "shell_service": {
+          "available": true,
+          "service": true,
+          "control_enabled": true,
+          "mode": "auto",
+          "rpm": 4690,
+          "percent": null,
+          "temperature": 76,
+          "manual_percent": 60,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "error": "",
+          "notice": ""
+        },
+        "widget": {
+          "available": true,
+          "service": true,
+          "control_enabled": true,
+          "mode": "auto",
+          "rpm": 4690,
+          "percent": null,
+          "temperature": 76,
+          "manual_percent": 60,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "error": "",
+          "notice": ""
+        },
+        "pwm1_enable": 2,
+        "watchdog_seconds": 0,
+        "kernel_fan_control": "Y",
+        "active": "active",
+        "enabled": "enabled",
+        "legacy_active": false
+      }
+    ],
+    "observer_errors": [],
+    "post_boot_live_controls": {
+      "result": "passed",
+      "before": {
+        "available": true,
+        "service": true,
+        "control_enabled": true,
+        "mode": "auto",
+        "rpm": 3676,
+        "percent": null,
+        "temperature": 51,
+        "manual_percent": 60,
+        "curve": [
+          [
+            40,
+            30
+          ],
+          [
+            55,
+            40
+          ],
+          [
+            65,
+            60
+          ],
+          [
+            75,
+            80
+          ],
+          [
+            85,
+            100
+          ]
+        ],
+        "error": "",
+        "notice": ""
+      },
+      "panel_open_status": {
+        "available": true,
+        "service": true,
+        "control_enabled": true,
+        "mode": "auto",
+        "rpm": 3676,
+        "percent": null,
+        "temperature": 51,
+        "manual_percent": 60,
+        "curve": [
+          [
+            40,
+            30
+          ],
+          [
+            55,
+            40
+          ],
+          [
+            65,
+            60
+          ],
+          [
+            75,
+            80
+          ],
+          [
+            85,
+            100
+          ]
+        ],
+        "error": "",
+        "notice": ""
+      },
+      "fresh_curve_request": {
+        "status": {
+          "available": true,
+          "service": true,
+          "control_enabled": true,
+          "mode": "curve",
+          "rpm": 3674,
+          "percent": 43,
+          "temperature": 52,
+          "manual_percent": 60,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "error": "",
+          "notice": ""
+        },
+        "pwm1_enable": 1,
+        "pwm1": 109,
+        "watchdog_seconds": 45
+      },
+      "auto_request": {
+        "status": {
+          "available": true,
+          "service": true,
+          "control_enabled": true,
+          "mode": "auto",
+          "rpm": 3676,
+          "percent": null,
+          "temperature": 52,
+          "manual_percent": 60,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "error": "",
+          "notice": ""
+        },
+        "pwm1_enable": 2,
+        "pwm1": 109,
+        "watchdog_seconds": 0
+      },
+      "final_state": {
+        "status": {
+          "available": true,
+          "service": true,
+          "control_enabled": true,
+          "mode": "auto",
+          "rpm": 3685,
+          "percent": null,
+          "temperature": 52,
+          "manual_percent": 60,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "error": "",
+          "notice": ""
+        },
+        "pwm1_enable": 2,
+        "pwm1": 109,
+        "watchdog_seconds": 0
+      }
+    },
+    "temporary_startup_observer_removed": true
   }
 }

@@ -17,7 +17,9 @@ ThinkPad T480s, with real fan writes, heartbeat expiry, kernel watchdog firing
 and service stop/restart checked. See the [measured hardware results](docs/hardware-validation.md).
 One deep sleep/resume check passed: after a temporary sensor gap, control became
 available 8.27 seconds after waking, while firmware Auto remained active throughout.
-Reboot and other models remain untested.
+A real reboot also passed: the service and widget started with working sensors
+and control in firmware Auto; fresh Curve and Auto requests worked afterward.
+Other models remain untested.
 **Sustained thermal stress has not passed:** full and reduced CPU-load attempts
 stopped at preset temperature limits. Fan response and sensor availability were
 observed, but these short runs do not establish adequate cooling under sustained
