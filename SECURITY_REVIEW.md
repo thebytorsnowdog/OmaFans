@@ -61,6 +61,7 @@ source release for review and testing, not a claim of hardware certification.
 | Installation/update/removal fixtures | Fixed-file install/update/remove round trip passed; dry run, conflicts and failed-stop retention tested without root writes |
 | Live system installation | Root-owned daemon runs under the supplied systemd unit on a T480s; service enabled, former controller stopped/disabled |
 | Real hardware control and recovery | Manual, Curve, Auto, heartbeat expiry, paused-daemon kernel watchdog event and graceful stop/restart passed; [measurements and source identity](docs/hardware-validation.md) |
+| Sensor recovery fix | Simulated sensor loss using installed 0.1.1 controller with real hardware recovered in 6.16 seconds with no recovery writes; live widget modes and two-minute observation passed |
 | Live Git installation/update | Native add and update from this public repository passed on the same T480s; new widget enabled and former widget disabled |
 
 Exact source identity and CI results are attached to the Git commit and its

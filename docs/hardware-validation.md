@@ -1,5 +1,49 @@
 # Live hardware validation
 
+## Sensor recovery fix — 0.1.1
+
+A later live report showed a valid temperature (63–69°C) while control remained
+disabled with `Temperature sensor unavailable`. Version 0.1.0 had permanently
+latched a previous failed read. Firmware Auto was active, but control never
+became available again. The old daemon did not log the triggering read failure,
+so its exact low-level cause is not established.
+
+The installed fix is runtime commit
+[`d93ef634fc1f87a9854ccfe2b9d8e5e5f1ad9c26`](https://github.com/thebytorsnowdog/omafans/commit/d93ef634fc1f87a9854ccfe2b9d8e5e5f1ad9c26),
+controller SHA-256
+`f721307de59a4562c3e97671585349b45dd8d1d96d4c3046a61c74afa0361b25`.
+It clears only a sensor fault after verified firmware Auto, successful watchdog
+disarming and three spaced valid readings. Old Manual/Curve intent is cleared;
+write/watchdog faults and unsuccessful or manual fallback remain latched.
+
+Validation on the same T480s included:
+
+- **41 Python tests**, including reproducing the stuck-fault behavior before
+  the fix, sample timing, interrupted recovery, startup sensor gaps, no old
+  request resumption, and no watchdog writes after failed rescue.
+- **Nine QML behavior tests**, including removal of the stale error and
+  re-enabling controls when a recovered status arrives.
+- A privileged harness using the **installed controller and real fan interface**,
+  while the system daemon was stopped to avoid competing controllers. The
+  harness simulated one unavailable temperature reading, confirmed immediate
+  firmware Auto with watchdog disabled, then used actual sensor readings.
+  Control recovered after **6.16 seconds** with **zero recovery writes**. A fresh
+  Curve request was accepted. This was a simulated read failure, not physical
+  sensor disconnection or a suspend/resume test.
+- The installed system service then started under its normal sandbox. Manual
+  100%, Manual 70%, Auto and Curve commands passed through the live widget,
+  with hardware PWM and watchdog read-back. Panel status showed temperature and
+  control available with no error.
+- A further **two-minute** live observation kept Curve active with valid
+  temperature readings, available control and no reported errors throughout.
+
+Selected results are in [sensor-recovery-validation.json](sensor-recovery-validation.json).
+The earlier measurements below apply to the initial runtime commit, and are
+kept as historical evidence rather than being attributed to the new source.
+Reboot, deliberate suspend/resume and thermal stress remain untested.
+
+## Initial installation — 0.1.0
+
 On **2026-10-07**, OmaFans replaced the previous fan controller and bar widget
 on a **ThinkPad T480s**. The system service and new widget were left running in
 Curve mode. This is a measured check on one laptop, not hardware certification
