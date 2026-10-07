@@ -14,7 +14,7 @@ def check():
     def require(condition, message):
         if not condition:
             errors.append(message)
-    for name in ("manifest.json", "Panel.qml", "Service.qml", "fanctl.py", "omafans.py", "README.md", "LICENSE", "SECURITY.md", "SECURITY_REVIEW.md", "system/omafans.service", "scripts/setup.py"):
+    for name in ("manifest.json", "Panel.qml", "Service.qml", "fanctl.py", "omafans.py", "README.md", "LICENSE", "SECURITY.md", "docs/SECURITY_REVIEW.md", "system/omafans.service", "scripts/setup.py"):
         require((ROOT / name).is_file(), f"Missing required file: {name}")
     manifest = json.loads((ROOT / "manifest.json").read_text())
     require(manifest.get("schemaVersion") == 1, "Unsupported manifest schema")

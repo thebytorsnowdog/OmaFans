@@ -55,7 +55,7 @@ source release for review and testing, not a claim of hardware certification.
 | Preview | Real hosted QML with fictional readings; panel-only screenshot, manually inspected |
 | Installation/update/removal fixtures | Fixed-file install/update/remove round trip passed; dry run, conflicts and failed-stop retention tested without root writes |
 | Live system installation | Root-owned daemon runs under the supplied systemd unit on a T480s; service enabled, former controller stopped/disabled |
-| Real hardware control and recovery | Manual, Curve, Auto, heartbeat expiry, paused-daemon kernel watchdog event and graceful stop/restart passed; [measurements and source identity](docs/hardware-validation.md) |
+| Real hardware control and recovery | Manual, Curve, Auto, heartbeat expiry, paused-daemon kernel watchdog event and graceful stop/restart passed; [measurements and source identity](hardware-validation.md) |
 | Live Git installation/update | Native add and update from this public repository passed on the same T480s; new widget enabled and former widget disabled |
 
 Exact source identity and CI results are attached to the Git commit and its
@@ -73,7 +73,7 @@ The additional CodeQL scan flagged group-write permissions on the local socket.
 Access was narrowed to mode 0600 for the selected desktop account; the protected
 parent directory and exact peer-UID checks remain in place.
 Bandit's fixed-subprocess exceptions are explained in
-[SECURITY.md](SECURITY.md). No blanket rule exclusion was added.
+[SECURITY.md](../SECURITY.md). No blanket rule exclusion was added.
 
 These advisory checks are **not a security audit**, certification, warranty,
 marketplace approval or a guarantee of adequate cooling.

@@ -1,5 +1,8 @@
 # OmaFans
 
+[![Checks](https://github.com/thebytorsnowdog/omafans/actions/workflows/checks.yml/badge.svg)](https://github.com/thebytorsnowdog/omafans/actions/workflows/checks.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 ThinkPad fan monitoring and control for the Omarchy 4 Quattro bar.
 
 OmaFans keeps the fan's RPM, temperature and mode in the bar, with a popup for
@@ -17,7 +20,20 @@ ThinkPad T480s, with real fan writes, heartbeat expiry, kernel watchdog firing
 and service stop/restart checked. See the [measured hardware results](docs/hardware-validation.md).
 Thermal stress, suspend/resume, reboot and other models remain untested.
 Start with monitoring, review the code, and assess your hardware before enabling
-control. See [verification scope](SECURITY_REVIEW.md).
+control. See [verification scope](docs/SECURITY_REVIEW.md).
+
+> [!WARNING]
+> **Use at your own risk. No warranty** (see [LICENSE](LICENSE)).
+> Fan control needs the `thinkpad_acpi fan_control=1` kernel option, which lets
+> software override the firmware's own fan management. A wrong setting, bug or
+> sensor fault can let the laptop **overheat**, throttle or suffer hardware damage.
+> Control is tested only on a ThinkPad T480s. On that machine the kernel watchdog
+> kept an already-selected level 7 when it expired, rather than switching to Auto.
+>
+> **Return to firmware Auto:** `sudo systemctl stop omafans.service` (the service
+> releases control on stop). If the daemon is not responding, run
+> `echo level auto | sudo tee /proc/acpi/ibm/fan`. To disable control completely, run
+> `sudo /usr/bin/python3 -I scripts/setup.py remove` and reboot.
 
 ## Requirements
 
@@ -32,6 +48,14 @@ control. See [verification scope](SECURITY_REVIEW.md).
 The runtime uses only Python's standard library, Qt/Quickshell and the Omarchy
 UI already installed on the host. There are no pip runtime dependencies,
 online accounts, telemetry, HTTP listeners or runtime downloads.
+
+## Supported hardware
+
+| Model | Monitoring | Control | Notes |
+| --- | --- | --- | --- |
+| ThinkPad T480s | Tested | Tested (live writes, heartbeat expiry, watchdog, stop/restart) | [Results](docs/hardware-validation.md) |
+| Other ThinkPads with `thinkpad_hwmon` (`temp1_input`, `fan1_input`, `pwm1`, `pwm1_enable`) | Expected | Untested | Reports welcome |
+| Non-ThinkPad laptops | Not supported | Not supported | |
 
 ## Install the widget (monitoring first)
 
@@ -167,6 +191,18 @@ OmaFans does not persist user settings or credentials. It writes only the
 ThinkPad PWM controls and watchdog at runtime. The QML service launches the
 unprivileged Python helper; it never invokes privilege elevation.
 
+## Troubleshooting
+
+- **The widget shows monitoring only.** Either the daemon is not installed or running
+  (`systemctl status omafans.service`), or `fan_control=1` is not active yet (reboot
+  after `--enable-kernel-control`).
+- **A 30% target reads about 43%.** That is expected. Firmware levels are discrete, so
+  OmaFans rounds up to the next level.
+- **The service reports a fault.** It has already tried to return to Auto and has stopped
+  writing. Check `journalctl -u omafans.service`, then restart the service yourself.
+- **The installer refuses to install.** Another fan controller (such as thinkfan or
+  fancontrol) is active. Disable it first.
+
 ## Development and security
 
 ```bash
@@ -177,13 +213,13 @@ omarchy plugin validate .
 
 The CI workflow also runs QML fixture tests, Bandit and Gitleaks against Git
 history. Fixtures never write real hardware. See [SECURITY.md](SECURITY.md) for
-the trust model and reporting procedure, and [SECURITY_REVIEW.md](SECURITY_REVIEW.md)
+the trust model and reporting procedure, and [docs/SECURITY_REVIEW.md](docs/SECURITY_REVIEW.md)
 for tested scope and limitations. Scans are not a security certification.
 
-The MIT license covers this repository. Qt, Quickshell, Omarchy, Python and
+The [MIT licence](LICENSE) covers this repository. Qt, Quickshell, Omarchy, Python and
 Linux remain separate system dependencies under their respective licenses;
 no copies of their source code are bundled.
 
-Report compatibility and ordinary bugs through the repository's Issues tab.
+Report compatibility and ordinary bugs through the repository's Issues tab, and see [CONTRIBUTING.md](CONTRIBUTING.md).
 Before sharing diagnostics, remove usernames, home paths, serial numbers and
 other identifying details.

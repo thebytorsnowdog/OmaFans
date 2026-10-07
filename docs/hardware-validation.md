@@ -96,5 +96,5 @@ was tested with fixtures, not by overheating the laptop. Enabled-at-boot is
 configuration evidence only. A daemon restart intentionally returns to Auto;
 manual and curve requests are not persisted across restarts.
 
-The [security record](../SECURITY_REVIEW.md) covers source review, automated
+The [security record](SECURITY_REVIEW.md) covers source review, automated
 tests, scanning and their separate limitations.
