@@ -369,8 +369,10 @@ def serve():
             # The root-owned parent prevents socket replacement. Only the
             # selected user can connect; SO_PEERCRED independently authenticates
             # both ends even if that trusted user changes the inode's mode.
-            os.chown(SOCKET_PATH, config["uid"], config["gid"])
+            # Set the mode while still owner: the service deliberately lacks
+            # CAP_FOWNER after ownership is transferred to the desktop user.
             os.chmod(SOCKET_PATH, 0o600)
+            os.chown(SOCKET_PATH, config["uid"], config["gid"])
             listener.listen(4)
             next_tick = time.monotonic()
             while running:
