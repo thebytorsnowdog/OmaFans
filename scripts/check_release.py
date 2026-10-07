@@ -2,9 +2,9 @@
 """Portable repository contract, privilege invariants, and privacy checks."""
 import ast
 import json
-from pathlib import Path
 import re
 import sys
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -14,7 +14,7 @@ def check():
     def require(condition, message):
         if not condition:
             errors.append(message)
-    for name in ("manifest.json", "Panel.qml", "Service.qml", "fanctl.py", "omafans.py", "README.md", "LICENSE", "SECURITY.md", "SECURITY_REVIEW.md", "system/omafans.service", "scripts/setup.py"):
+    for name in ("manifest.json", "Panel.qml", "Service.qml", "fanctl.py", "omafans.py", "README.md", "LICENSE", "SECURITY.md", "docs/SECURITY_REVIEW.md", "system/omafans.service", "scripts/setup.py"):
         require((ROOT / name).is_file(), f"Missing required file: {name}")
     manifest = json.loads((ROOT / "manifest.json").read_text())
     require(manifest.get("schemaVersion") == 1, "Unsupported manifest schema")
@@ -38,7 +38,7 @@ def check():
         elif isinstance(node, ast.ImportFrom):
             require(node.module in allowed, "Unreviewed daemon import")
     # Scan the candidate tree, excluding only generated/local VCS artifacts.
-    excluded = {".git", "__pycache__", ".venv", "audit-results"}
+    excluded = {".git", "__pycache__", ".venv", ".ruff_cache", "audit-results"}
     for path in ROOT.rglob("*"):
         relative = path.relative_to(ROOT)
         if set(relative.parts) & excluded:

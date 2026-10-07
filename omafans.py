@@ -10,7 +10,6 @@ import glob
 import json
 import math
 import os
-from pathlib import Path
 import select
 import signal
 import socket
@@ -18,6 +17,7 @@ import stat
 import struct
 import sys
 import time
+from pathlib import Path
 
 SOCKET_PATH = "/run/omafans/control.sock"
 CONFIG_PATH = "/etc/omafans/controller.json"
@@ -100,7 +100,7 @@ def decode_message(raw):
     except (UnicodeError, RecursionError) as exc:
         raise ValueError("Invalid JSON") from exc
     if not isinstance(value, dict):
-        raise ValueError("Expected a JSON object")
+        raise ValueError("Expected a JSON object")  # noqa: TRY004 - protocol errors are ValueError
     pending = [(value, 0)]
     while pending:
         item, depth = pending.pop()
@@ -159,10 +159,10 @@ class Hardware:
         for name in sorted(glob.glob("/sys/class/hwmon/hwmon*/name")):
             try:
                 path = Path(name).parent.resolve(strict=True)
-                if path.is_relative_to("/sys/devices/platform/thinkpad_hwmon/hwmon"):
-                    if Path(name).read_text(encoding="ascii").strip() == "thinkpad":
-                        self.root = path
-                        break
+                if (path.is_relative_to("/sys/devices/platform/thinkpad_hwmon/hwmon")
+                        and Path(name).read_text(encoding="ascii").strip() == "thinkpad"):
+                    self.root = path
+                    break
             except (OSError, UnicodeError):
                 continue
 

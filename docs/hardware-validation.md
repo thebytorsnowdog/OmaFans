@@ -77,7 +77,7 @@ became available again. The old daemon did not log the triggering read failure,
 so its exact low-level cause is not established.
 
 The installed fix is runtime commit
-[`d93ef634fc1f87a9854ccfe2b9d8e5e5f1ad9c26`](https://github.com/thebytorsnowdog/omafans/commit/d93ef634fc1f87a9854ccfe2b9d8e5e5f1ad9c26),
+[`d93ef634fc1f87a9854ccfe2b9d8e5e5f1ad9c26`](https://github.com/thebytorsnowdog/OmaFans/commit/d93ef634fc1f87a9854ccfe2b9d8e5e5f1ad9c26),
 controller SHA-256
 `f721307de59a4562c3e97671585349b45dd8d1d96d4c3046a61c74afa0361b25`.
 It clears only a sensor fault after verified firmware Auto, successful watchdog
@@ -121,7 +121,7 @@ or a claim of compatibility with every ThinkPad.
 
 ## Tested source and environment
 
-- Runtime commit: [`f3f2847379456018c48d487681f4e4abebc6345d`](https://github.com/thebytorsnowdog/omafans/commit/f3f2847379456018c48d487681f4e4abebc6345d).
+- Runtime commit: [`f3f2847379456018c48d487681f4e4abebc6345d`](https://github.com/thebytorsnowdog/OmaFans/commit/f3f2847379456018c48d487681f4e4abebc6345d).
 - Controller SHA-256: `dffaa570b75efb01570402dc9f7a295278181a72a49500b2ef3c6aed44635dae`.
   The privileged harness verified that the installed root-owned controller
   matched the checkout. The installed widget's controller copy also matched.
@@ -210,5 +210,5 @@ was tested with fixtures, not by overheating the laptop. Enabled-at-boot is
 configuration evidence only. A daemon restart intentionally returns to Auto;
 manual and curve requests are not persisted across restarts.
 
-The [security record](../SECURITY_REVIEW.md) covers source review, automated
+The [security record](SECURITY_REVIEW.md) covers source review, automated
 tests, scanning and their separate limitations.

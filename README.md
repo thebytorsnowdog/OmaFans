@@ -1,5 +1,8 @@
 # OmaFans
 
+[![Checks](https://github.com/thebytorsnowdog/OmaFans/actions/workflows/checks.yml/badge.svg)](https://github.com/thebytorsnowdog/OmaFans/actions/workflows/checks.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 ThinkPad fan monitoring and control for the Omarchy 4 Quattro bar.
 
 OmaFans keeps the fan's RPM, temperature and mode in the bar, with a popup for
@@ -26,7 +29,49 @@ observed, but these short runs do not establish adequate cooling under sustained
 load. The displayed ThinkPad sensor can lag the hottest CPU reading; the 92°C
 override monitors that ThinkPad input, not every CPU core.
 Start with monitoring, review the code, and assess your hardware before enabling
-control. See [verification scope](SECURITY_REVIEW.md).
+control. See [verification scope](docs/SECURITY_REVIEW.md).
+
+> [!WARNING]
+> **Use at your own risk. No warranty** (see [LICENSE](LICENSE)).
+> Fan control needs the `thinkpad_acpi fan_control=1` kernel option, which lets
+> software override the firmware's own fan management. A wrong setting, bug or
+> sensor fault can let the laptop **overheat**, throttle or suffer hardware damage.
+> Control is tested only on a ThinkPad T480s. On that machine the kernel watchdog
+> kept an already-selected level 7 when it expired, rather than switching to Auto.
+>
+> **Return to firmware Auto:** `sudo systemctl stop omafans.service` (the service
+> releases control on stop). If the daemon is not responding, run
+> `echo level auto | sudo tee /proc/acpi/ibm/fan`. To disable control completely, run
+> `sudo /usr/bin/python3 -I scripts/setup.py remove` and reboot.
+>
+> **Overheat safeguard limit:** at 92°C (`temp1_input` only), OmaFans requests
+> level 7, the highest *normal* level. It does not use the driver's
+> disengaged/full-speed mode, because OmaFans deliberately never bypasses
+> the firmware's fan regulation (see [SECURITY.md](SECURITY.md)). Level 7 may
+> therefore be slower than the fan's absolute maximum.
+>
+> **Hardware testing so far (ThinkPad T480s only):** one real suspend/resume
+> cycle and one real reboot passed. **Sustained thermal stress has NOT passed**:
+> CPU-load attempts stopped at preset temperature limits. Other models are untested.
+>
+> **The 92°C override is not a CPU temperature limit.** It reads only the
+> ThinkPad `temp1_input` sensor, which can lag the CPU: in testing the CPU
+> reached 96°C while that sensor read 70°C.
+
+## Quick start
+
+```bash
+# 1. Monitoring only (no root, no kernel changes)
+omarchy plugin add https://github.com/thebytorsnowdog/OmaFans.git
+omarchy plugin enable community.omafans --section right
+
+# 2. Optional fan control: preview, install, then reboot
+cd ~/.config/omarchy/plugins/community.omafans
+python3 scripts/setup.py install --user "$(id -un)" --dry-run
+sudo /usr/bin/python3 -I scripts/setup.py install --user "$(id -un)" --enable-kernel-control
+```
+
+Read [Optional fan control](#optional-fan-control) before step 2. To uninstall, see [Remove](#remove).
 
 ## Requirements
 
@@ -42,12 +87,20 @@ The runtime uses only Python's standard library, Qt/Quickshell and the Omarchy
 UI already installed on the host. There are no pip runtime dependencies,
 online accounts, telemetry, HTTP listeners or runtime downloads.
 
+## Supported hardware
+
+| Model | Monitoring | Control | Notes |
+| --- | --- | --- | --- |
+| ThinkPad T480s | Tested | Tested (live writes, heartbeat expiry, watchdog, stop/restart) | [Results](docs/hardware-validation.md) |
+| Other ThinkPads with `thinkpad_hwmon` (`temp1_input`, `fan1_input`, `pwm1`, `pwm1_enable`) | Expected | Untested | Reports welcome |
+| Non-ThinkPad laptops | Not supported | Not supported | |
+
 ## Install the widget (monitoring first)
 
 Review this repository, then add it using Omarchy:
 
 ```bash
-omarchy plugin add https://github.com/thebytorsnowdog/omafans.git
+omarchy plugin add https://github.com/thebytorsnowdog/OmaFans.git
 omarchy plugin enable community.omafans --section right
 ```
 
@@ -181,6 +234,18 @@ OmaFans does not persist user settings or credentials. It writes only the
 ThinkPad PWM controls and watchdog at runtime. The QML service launches the
 unprivileged Python helper; it never invokes privilege elevation.
 
+## Troubleshooting
+
+- **The widget shows monitoring only.** Either the daemon is not installed or running
+  (`systemctl status omafans.service`), or `fan_control=1` is not active yet (reboot
+  after `--enable-kernel-control`).
+- **A 30% target reads about 43%.** That is expected. Firmware levels are discrete, so
+  OmaFans rounds up to the next level.
+- **The service reports a fault.** It has already tried to return to Auto and has stopped
+  writing. Check `journalctl -u omafans.service`, then restart the service yourself.
+- **The installer refuses to install.** Another fan controller (such as thinkfan or
+  fancontrol) is active. Disable it first.
+
 ## Development and security
 
 ```bash
@@ -191,13 +256,13 @@ omarchy plugin validate .
 
 The CI workflow also runs QML fixture tests, Bandit and Gitleaks against Git
 history. Fixtures never write real hardware. See [SECURITY.md](SECURITY.md) for
-the trust model and reporting procedure, and [SECURITY_REVIEW.md](SECURITY_REVIEW.md)
+the trust model and reporting procedure, and [docs/SECURITY_REVIEW.md](docs/SECURITY_REVIEW.md)
 for tested scope and limitations. Scans are not a security certification.
 
-The MIT license covers this repository. Qt, Quickshell, Omarchy, Python and
+The [MIT licence](LICENSE) covers this repository. Qt, Quickshell, Omarchy, Python and
 Linux remain separate system dependencies under their respective licenses;
 no copies of their source code are bundled.
 
-Report compatibility and ordinary bugs through the repository's Issues tab.
+Report compatibility and ordinary bugs through the repository's Issues tab, and see [CONTRIBUTING.md](CONTRIBUTING.md).
 Before sharing diagnostics, remove usernames, home paths, serial numbers and
 other identifying details.
