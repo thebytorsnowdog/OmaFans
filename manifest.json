@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "community.omafans",
+  "name": "OmaFans",
+  "version": "0.1.0",
+  "author": "OmaFans contributors",
+  "license": "MIT",
+  "description": "ThinkPad fan monitoring and control for Omarchy: automatic, manual and temperature-curve modes.",
+  "kinds": [
+    "bar-widget",
+    "service"
+  ],
+  "entryPoints": {
+    "service": "Service.qml",
+    "barWidget": "Panel.qml"
+  },
+  "barWidget": {
+    "displayName": "OmaFans",
+    "description": "Fan mode, speed, and temperature with manual and curve control.",
+    "category": "System",
+    "allowMultiple": false,
+    "defaultSection": "right",
+    "defaults": {},
+    "schema": []
+  }
+}

@@ -1,0 +1,40 @@
+[Unit]
+Description=OmaFans ThinkPad fan controller
+After=sysinit.target
+Conflicts=thinkfan.service fancontrol.service nbfc.service nbfc_service.service omarchy-fanctl.service
+ConditionPathExists=/etc/omafans/controller.json
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 -I /usr/local/lib/omafans/omafans.py serve
+ExecStopPost=/usr/bin/python3 -I /usr/local/lib/omafans/omafans.py release
+Restart=no
+TimeoutStopSec=5
+RuntimeDirectory=omafans
+RuntimeDirectoryMode=0755
+UMask=0077
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectControlGroups=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+CapabilityBoundingSet=CAP_CHOWN CAP_DAC_OVERRIDE
+RestrictAddressFamilies=AF_UNIX
+IPAddressDeny=any
+ReadOnlyPaths=/sys
+ReadWritePaths=-/sys/devices/platform/thinkpad_hwmon/hwmon
+ReadWritePaths=-/sys/bus/platform/drivers/thinkpad_hwmon/fan_watchdog
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=multi-user.target
