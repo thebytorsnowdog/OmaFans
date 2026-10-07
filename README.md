@@ -12,8 +12,10 @@ It follows the active Omarchy theme and supports keyboard navigation.
 
 **Experimental, ThinkPad-specific software.** This is an independently
 maintained community plugin, unaffiliated with Omarchy or Lenovo. It is not a
-universal laptop fan controller. The new privileged daemon has fixture and
-security tests; it has not yet undergone live fan-write or thermal testing.
+universal laptop fan controller. The daemon and widget are running on a
+ThinkPad T480s, with real fan writes, heartbeat expiry, kernel watchdog firing
+and service stop/restart checked. See the [measured hardware results](docs/hardware-validation.md).
+Thermal stress, suspend/resume, reboot and other models remain untested.
 Start with monitoring, review the code, and assess your hardware before enabling
 control. See [verification scope](SECURITY_REVIEW.md).
 
@@ -99,6 +101,8 @@ request. Closing the popup leaves control active; disabling the plugin stops
 its heartbeat.
 
 The daemon arms a 45-second kernel watchdog before every manual operation.
+Its recovery is driver-specific: on the tested T480s, expiry preserved an
+already-selected highest normal level 7 rather than switching it to Auto.
 Invalid sensor data or a failed watchdog/write/read-back latches a fault and
 attempts firmware Auto, with highest normal speed as a fallback. After that
 attempt it stops making repeated writes so it cannot indefinitely postpone the

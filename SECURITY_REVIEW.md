@@ -32,6 +32,10 @@ source release for review and testing, not a claim of hardware certification.
   added a helper timeout. The widget never runs privileged setup itself.
 - Added an explicit installer/remover, protected system files, a hardened
   system unit, license, documentation, fixture tests and CI security checks.
+- Live installation exposed a socket setup ordering error under the restricted
+  capabilities: changing ownership before setting its mode failed with EPERM.
+  The fix sets mode 0600 before transferring ownership, without adding
+  capabilities. Startup and stop/restart then passed under the actual unit.
 
 ## Executed local evidence
 
@@ -47,9 +51,12 @@ source release for review and testing, not a claim of hardware certification.
 | `systemd-analyze verify system/omafans.service` | Passed on systemd 261; syntax/dependency validation only |
 | QML static analysis with installed host imports | No parse/import errors; dynamic host properties and a Quickshell enum produce unresolved static-type warnings |
 | Live hosted widget | Monitoring status, panel open/close, disable/re-enable, rescan and fictional fixture loading passed |
-| Desktop restoration | Original shell configuration bytes, workspace and cursor restored; temporary plugin removed |
+| Initial demo restoration | Original shell configuration bytes, workspace and cursor restored; temporary plugin removed before the later authorized live migration |
 | Preview | Real hosted QML with fictional readings; panel-only screenshot, manually inspected |
 | Installation/update/removal fixtures | Fixed-file install/update/remove round trip passed; dry run, conflicts and failed-stop retention tested without root writes |
+| Live system installation | Root-owned daemon runs under the supplied systemd unit on a T480s; service enabled, former controller stopped/disabled |
+| Real hardware control and recovery | Manual, Curve, Auto, heartbeat expiry, paused-daemon kernel watchdog event and graceful stop/restart passed; [measurements and source identity](docs/hardware-validation.md) |
+| Live Git installation/update | Native add and update from this public repository passed on the same T480s; new widget enabled and former widget disabled |
 
 Exact source identity and CI results are attached to the Git commit and its
 **Checks** workflow on GitHub. Rerun these checks when changing the candidate;
@@ -73,18 +80,19 @@ marketplace approval or a guarantee of adequate cooling.
 
 ## Limits and checks not performed
 
-- No real fan writes, daemon installation under the live systemd sandbox,
-  physical watchdog-expiry test, thermal stress test, hardware fault injection
-  or suspend/resume test of the privileged daemon was performed. The installed
-  controller on the development machine was preserved.
+- Live control was checked on one T480s. No thermal stress test, hardware fault
+  injection, suspend/resume or reboot test was performed. The 92°C safeguard
+  has fixture evidence only. Watchdog firing was tested at level 7; a live
+  transition from a lower level to firmware Auto was not tested.
 - Only the first ThinkPad thermal input controls the 92°C override. Sensor
   mapping, other components, RPM accuracy, cooling effectiveness and secondary
   fans are not validated.
 - The UI was exercised on one horizontal-bar display. Vertical placement,
   multiple monitors and full-shell restart behavior remain unverified.
-- Native Git-based plugin add/update/removal is documented but has not been
-  exercised against this public repository on a separate machine. Lifecycle
-  tests used a temporary copy of the candidate runtime files.
+- No separate machine has been tested. Native add/update passed on the live
+  laptop; removal of the newly installed live system was not performed because
+  it is now the active controller. Installation/removal fixtures and the earlier
+  temporary-widget lifecycle checks remain separate evidence.
 - The root daemon uses only the standard library. Python, kernel, systemd, Qt
   and Quickshell patch levels are the operating system's responsibility; a
   Python dependency scanner cannot certify those components.

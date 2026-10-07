@@ -1,0 +1,1089 @@
+{
+  "date": "2026-10-07",
+  "runtime_commit": "f3f2847379456018c48d487681f4e4abebc6345d",
+  "controller_sha256": "dffaa570b75efb01570402dc9f7a295278181a72a49500b2ef3c6aed44635dae",
+  "hardware": "ThinkPad T480s",
+  "environment": {
+    "omarchy": "4.0.4-1",
+    "kernel": "7.2.5-3-omarchy",
+    "systemd": "261.2-1-arch"
+  },
+  "live_control": {
+    "manual_100": {
+      "result": "pass",
+      "readback": {
+        "status": {
+          "mode": "manual",
+          "manual_percent": 100,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "available": true,
+          "service": true,
+          "control_enabled": true,
+          "rpm": 4076,
+          "percent": 100,
+          "temperature": 63.0,
+          "error": "",
+          "notice": "",
+          "ok": true
+        },
+        "pwm1_enable": 1,
+        "pwm1": 255,
+        "watchdog": 45,
+        "rpm": 4076,
+        "temperature_mc": 63000
+      },
+      "settling_samples": [
+        {
+          "rpm": 4643,
+          "temperature_mc": 63000
+        },
+        {
+          "rpm": 5136,
+          "temperature_mc": 63000
+        },
+        {
+          "rpm": 5076,
+          "temperature_mc": 64000
+        }
+      ]
+    },
+    "manual_70": {
+      "result": "pass",
+      "readback": {
+        "status": {
+          "mode": "manual",
+          "manual_percent": 70,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "available": true,
+          "service": true,
+          "control_enabled": true,
+          "rpm": 5076,
+          "percent": 71,
+          "temperature": 64.0,
+          "error": "",
+          "notice": "",
+          "ok": true
+        },
+        "pwm1_enable": 1,
+        "pwm1": 182,
+        "watchdog": 45,
+        "rpm": 5076,
+        "temperature_mc": 64000
+      }
+    },
+    "daemon_rejects_zero_duty": {
+      "result": "pass",
+      "response": {
+        "ok": false,
+        "error": "Invalid or incomplete request"
+      }
+    },
+    "curve": {
+      "result": "pass",
+      "readback": {
+        "status": {
+          "mode": "curve",
+          "manual_percent": 70,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "available": true,
+          "service": true,
+          "control_enabled": true,
+          "rpm": 5076,
+          "percent": 43,
+          "temperature": 64.0,
+          "error": "",
+          "notice": "",
+          "ok": true
+        },
+        "pwm1_enable": 1,
+        "pwm1": 109,
+        "watchdog": 45,
+        "rpm": 5076,
+        "temperature_mc": 64000
+      }
+    },
+    "firmware_auto": {
+      "result": "pass",
+      "readback": {
+        "status": {
+          "mode": "auto",
+          "manual_percent": 70,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "available": true,
+          "service": true,
+          "control_enabled": true,
+          "rpm": 5076,
+          "percent": null,
+          "temperature": 64.0,
+          "error": "",
+          "notice": "",
+          "ok": true
+        },
+        "pwm1_enable": 2,
+        "pwm1": 109,
+        "watchdog": 0,
+        "rpm": 5076,
+        "temperature_mc": 64000
+      }
+    },
+    "heartbeat_expiry": {
+      "result": "pass",
+      "seconds": 16.04,
+      "readback": {
+        "status": {
+          "mode": "auto",
+          "manual_percent": 100,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "available": true,
+          "service": true,
+          "control_enabled": true,
+          "rpm": 5093,
+          "percent": null,
+          "temperature": 63.0,
+          "error": "",
+          "notice": "",
+          "ok": true
+        },
+        "pwm1_enable": 2,
+        "pwm1": 255,
+        "watchdog": 0,
+        "rpm": 5093,
+        "temperature_mc": 63000
+      }
+    },
+    "no_automatic_manual_resume": {
+      "result": "pass"
+    }
+  },
+  "system_safety": {
+    "unauthorized_root_peer": "rejected",
+    "kernel_watchdog": {
+      "seconds": 48.36,
+      "before": {
+        "pwm1_enable": 1,
+        "pwm1": 255,
+        "rpm": 4091,
+        "temperature_mc": 63000,
+        "watchdog": 45
+      },
+      "after": {
+        "pwm1_enable": 1,
+        "pwm1": 255,
+        "rpm": 5080,
+        "temperature_mc": 60000,
+        "watchdog": 45
+      },
+      "event": {
+        "message": "thinkpad_acpi: fan watchdog: enabling fan"
+      },
+      "samples": [
+        {
+          "seconds": 0.0,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 4091,
+          "temperature_mc": 63000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 1.01,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 4249,
+          "temperature_mc": 63000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 2.01,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 4504,
+          "temperature_mc": 63000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 3.02,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 4769,
+          "temperature_mc": 63000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 4.03,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5050,
+          "temperature_mc": 64000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 5.04,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5163,
+          "temperature_mc": 64000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 6.04,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5119,
+          "temperature_mc": 62000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 7.05,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5093,
+          "temperature_mc": 62000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 8.06,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5078,
+          "temperature_mc": 62000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 9.07,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5076,
+          "temperature_mc": 62000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 10.07,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5076,
+          "temperature_mc": 61000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 11.08,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5076,
+          "temperature_mc": 61000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 12.09,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5076,
+          "temperature_mc": 60000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 13.1,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5076,
+          "temperature_mc": 60000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 14.1,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5080,
+          "temperature_mc": 60000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 15.11,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5076,
+          "temperature_mc": 60000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 16.12,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5080,
+          "temperature_mc": 60000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 17.13,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5076,
+          "temperature_mc": 60000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 18.13,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5076,
+          "temperature_mc": 60000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 19.14,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5080,
+          "temperature_mc": 60000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 20.15,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5080,
+          "temperature_mc": 60000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 21.15,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5076,
+          "temperature_mc": 60000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 22.16,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5076,
+          "temperature_mc": 60000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 23.17,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5084,
+          "temperature_mc": 61000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 24.17,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5080,
+          "temperature_mc": 61000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 25.18,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5076,
+          "temperature_mc": 61000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 26.19,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5080,
+          "temperature_mc": 61000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 27.2,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5076,
+          "temperature_mc": 60000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 28.2,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5076,
+          "temperature_mc": 60000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 29.21,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5076,
+          "temperature_mc": 59000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 30.22,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5076,
+          "temperature_mc": 59000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 31.23,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5084,
+          "temperature_mc": 60000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 32.23,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5088,
+          "temperature_mc": 60000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 33.24,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5088,
+          "temperature_mc": 60000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 34.25,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5076,
+          "temperature_mc": 60000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 35.25,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5076,
+          "temperature_mc": 60000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 36.26,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5080,
+          "temperature_mc": 60000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 37.27,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5076,
+          "temperature_mc": 61000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 38.28,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5076,
+          "temperature_mc": 61000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 39.28,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5080,
+          "temperature_mc": 61000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 40.29,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5084,
+          "temperature_mc": 61000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 41.3,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5076,
+          "temperature_mc": 61000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 42.31,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5076,
+          "temperature_mc": 61000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 43.31,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5076,
+          "temperature_mc": 61000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 44.32,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5082,
+          "temperature_mc": 61000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 45.33,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5078,
+          "temperature_mc": 60000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 46.34,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5076,
+          "temperature_mc": 60000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 47.34,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5076,
+          "temperature_mc": 60000,
+          "watchdog": 45,
+          "process_state": "T"
+        },
+        {
+          "seconds": 48.35,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "rpm": 5080,
+          "temperature_mc": 60000,
+          "watchdog": 45,
+          "process_state": "T"
+        }
+      ],
+      "result": "watchdog fired with daemon stopped; retained highest normal level 7"
+    },
+    "resume": "automatic mode, controller healthy",
+    "graceful_stop": {
+      "pwm1_enable": 2,
+      "pwm1": 255,
+      "rpm": 5050,
+      "temperature_mc": 59000,
+      "watchdog": 0
+    },
+    "restart": {
+      "status": {
+        "mode": "auto",
+        "manual_percent": 60,
+        "curve": [
+          [
+            40,
+            30
+          ],
+          [
+            55,
+            40
+          ],
+          [
+            65,
+            60
+          ],
+          [
+            75,
+            80
+          ],
+          [
+            85,
+            100
+          ]
+        ],
+        "available": true,
+        "service": true,
+        "control_enabled": true,
+        "rpm": 5050,
+        "percent": null,
+        "temperature": 59.0,
+        "error": "",
+        "notice": "",
+        "ok": true
+      },
+      "enabled_at_boot": true,
+      "legacy_controller": "inactive and disabled"
+    }
+  },
+  "widget_observation": [
+    {
+      "seconds": 0.04,
+      "status": {
+        "available": true,
+        "service": true,
+        "control_enabled": true,
+        "mode": "curve",
+        "rpm": 4021,
+        "percent": 43,
+        "temperature": 67,
+        "manual_percent": 70,
+        "curve": [
+          [
+            40,
+            30
+          ],
+          [
+            55,
+            40
+          ],
+          [
+            65,
+            60
+          ],
+          [
+            75,
+            80
+          ],
+          [
+            85,
+            100
+          ]
+        ],
+        "error": "",
+        "notice": ""
+      }
+    },
+    {
+      "seconds": 4.07,
+      "status": {
+        "available": true,
+        "service": true,
+        "control_enabled": true,
+        "mode": "curve",
+        "rpm": 4885,
+        "percent": 85,
+        "temperature": 81,
+        "manual_percent": 70,
+        "curve": [
+          [
+            40,
+            30
+          ],
+          [
+            55,
+            40
+          ],
+          [
+            65,
+            60
+          ],
+          [
+            75,
+            80
+          ],
+          [
+            85,
+            100
+          ]
+        ],
+        "error": "",
+        "notice": ""
+      }
+    },
+    {
+      "seconds": 8.11,
+      "status": {
+        "available": true,
+        "service": true,
+        "control_enabled": true,
+        "mode": "curve",
+        "rpm": 5076,
+        "percent": 85,
+        "temperature": 78,
+        "manual_percent": 70,
+        "curve": [
+          [
+            40,
+            30
+          ],
+          [
+            55,
+            40
+          ],
+          [
+            65,
+            60
+          ],
+          [
+            75,
+            80
+          ],
+          [
+            85,
+            100
+          ]
+        ],
+        "error": "",
+        "notice": ""
+      }
+    },
+    {
+      "seconds": 12.14,
+      "status": {
+        "available": true,
+        "service": true,
+        "control_enabled": true,
+        "mode": "curve",
+        "rpm": 5076,
+        "percent": 85,
+        "temperature": 73,
+        "manual_percent": 70,
+        "curve": [
+          [
+            40,
+            30
+          ],
+          [
+            55,
+            40
+          ],
+          [
+            65,
+            60
+          ],
+          [
+            75,
+            80
+          ],
+          [
+            85,
+            100
+          ]
+        ],
+        "error": "",
+        "notice": ""
+      }
+    },
+    {
+      "seconds": 16.18,
+      "status": {
+        "available": true,
+        "service": true,
+        "control_enabled": true,
+        "mode": "curve",
+        "rpm": 4661,
+        "percent": 71,
+        "temperature": 69,
+        "manual_percent": 70,
+        "curve": [
+          [
+            40,
+            30
+          ],
+          [
+            55,
+            40
+          ],
+          [
+            65,
+            60
+          ],
+          [
+            75,
+            80
+          ],
+          [
+            85,
+            100
+          ]
+        ],
+        "error": "",
+        "notice": ""
+      }
+    },
+    {
+      "seconds": 20.22,
+      "status": {
+        "available": true,
+        "service": true,
+        "control_enabled": true,
+        "mode": "curve",
+        "rpm": 4658,
+        "percent": 71,
+        "temperature": 67,
+        "manual_percent": 70,
+        "curve": [
+          [
+            40,
+            30
+          ],
+          [
+            55,
+            40
+          ],
+          [
+            65,
+            60
+          ],
+          [
+            75,
+            80
+          ],
+          [
+            85,
+            100
+          ]
+        ],
+        "error": "",
+        "notice": ""
+      }
+    },
+    {
+      "seconds": 24.26,
+      "status": {
+        "available": true,
+        "service": true,
+        "control_enabled": true,
+        "mode": "curve",
+        "rpm": 4659,
+        "percent": 71,
+        "temperature": 65,
+        "manual_percent": 70,
+        "curve": [
+          [
+            40,
+            30
+          ],
+          [
+            55,
+            40
+          ],
+          [
+            65,
+            60
+          ],
+          [
+            75,
+            80
+          ],
+          [
+            85,
+            100
+          ]
+        ],
+        "error": "",
+        "notice": ""
+      }
+    }
+  ],
+  "final_panel_status": {
+    "available": true,
+    "service": true,
+    "control_enabled": true,
+    "mode": "curve",
+    "rpm": 4132,
+    "percent": 43,
+    "temperature": 64,
+    "manual_percent": 70,
+    "curve": [
+      [
+        40,
+        30
+      ],
+      [
+        55,
+        40
+      ],
+      [
+        65,
+        60
+      ],
+      [
+        75,
+        80
+      ],
+      [
+        85,
+        100
+      ]
+    ],
+    "error": "",
+    "notice": ""
+  },
+  "service": {
+    "ActiveState": "active",
+    "SubState": "running",
+    "UnitFileState": "enabled",
+    "Result": "success"
+  },
+  "legacy_controller": "inactive and disabled",
+  "legacy_widget": "disabled",
+  "new_widget": "enabled",
+  "limitations": [
+    "single laptop",
+    "no reboot test",
+    "no suspend/resume test",
+    "no thermal stress test",
+    "no physical hardware fault injection",
+    "watchdog tested only at highest normal fan level"
+  ]
+}
