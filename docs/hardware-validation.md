@@ -1,5 +1,61 @@
 # Live hardware validation
 
+## Lifecycle and load checks — 0.1.1
+
+On **2026-10-07**, the same T480s ran additional checks against runtime commit
+`d93ef634fc1f87a9854ccfe2b9d8e5e5f1ad9c26`, installed controller SHA-256
+`f721307de59a4562c3e97671585349b45dd8d1d96d4c3046a61c74afa0361b25`.
+The runtime was unchanged. Selected raw observations are in
+[lifecycle-validation.json](lifecycle-validation.json).
+
+| Check | Observed result |
+| --- | --- |
+| Real deep sleep/resume | **Passed the documented recovery behavior.** A 45-second RTC wake alarm produced 43.52 seconds of measured sleep; kernel entry/exit records confirmed deep suspend, with no reboot or daemon restart |
+| Sensor availability after wake | Initially unavailable, then valid but recovering; control became available after **8.27 seconds**, with six healthy samples total from 8.27 through 18.45 seconds |
+| Safe behavior during recovery | Every post-wake sample showed firmware Auto (`pwm1_enable=2`) and watchdog disarmed; the old Curve request did not resume |
+| Fresh request after recovery | A new Curve request was accepted, with manual hardware mode and watchdog 45 seconds; cleanup verified healthy firmware Auto and cleared the RTC alarm |
+| Full CPU load | **Stopped at the test limit**, after about 3 seconds: eight busy workers, approximately 100% sampled CPU use, CPU peak 96°C, control sensor 70°C |
+| Reduced CPU load | **Stopped at the test limit**, after about 13 seconds: eight workers at 40% duty, 51.4% average sampled system CPU use, CPU peak 95°C, control sensor peak 90°C |
+| Reboot | **Not run.** A temporary read-only startup observer is prepared; a real reboot, startup observations and a post-boot installed-source hash check are still required |
+
+Both load attempts planned 120 seconds, with independent CPU and controller
+sensor readings and early-stop thresholds of **96°C CPU** and **90°C controller
+sensor**. The CPU reported a critical threshold of 100°C. The test thresholds
+were not changes to OmaFans. The full-load attempt reached the CPU threshold;
+the reduced-duty attempt reached the controller-sensor threshold. All load
+workers stopped, the daemon remained active, and cleanup returned control to
+firmware Auto. Neither attempt completed its intended sustained interval.
+
+During reduced load, hardware PWM rose from 109 to 255 and fan readings rose
+from roughly 3,851 to 5,181 RPM. Temperature and control remained available with
+no reported error in all load samples. These observations establish a response
+to rising temperature, **not adequate cooling under sustained load**. The full
+load's 96°C CPU versus 70°C control input also shows why the displayed input and
+92°C override must not be treated as a hottest-CPU-core safeguard.
+
+The initial suspend harness incorrectly required every post-wake sample to be
+healthy immediately, so that assertion failed. The unchanged raw samples were
+then checked against the documented sensor-recovery behavior: firmware Auto
+throughout the gap, recovery within the 20-second observation window, continued
+healthy readings and no automatic restoration of old Curve intent. Kernel
+records, daemon continuity, installed-source identity and a fresh Curve command
+were checked separately. This was **one actual suspend**, not a second trial
+or physical sensor disconnection. Temporary unavailability after waking remains
+visible until the sensor readings stabilize.
+
+The evidence came from bounded Python CPU workers and one-second load samples,
+`rtcwake -m no -s 45` followed by `systemctl suspend`, BOOTTIME versus monotonic
+clock measurements, kernel journal entry/exit records, daemon/socket status,
+and direct sysfs read-back. The load harnesses exited 1 after their temperature
+stops. The original immediate-availability suspend assertion exited 1; the
+documented-contract evaluation and remaining live control checks exited 0.
+Private logs and full observations are retained locally; the public JSON omits
+account details, absolute personal paths, process/boot identifiers and full logs.
+
+**Outstanding:** reboot, sustained thermal stress, repeated sleep cycles,
+physical fan/sensor fault injection, secondary fans and other laptop models.
+The system was left in verified firmware Auto after these checks.
+
 ## Sensor recovery fix — 0.1.1
 
 A later live report showed a valid temperature (63–69°C) while control remained
@@ -40,7 +96,9 @@ Validation on the same T480s included:
 Selected results are in [sensor-recovery-validation.json](sensor-recovery-validation.json).
 The earlier measurements below apply to the initial runtime commit, and are
 kept as historical evidence rather than being attributed to the new source.
-Reboot, deliberate suspend/resume and thermal stress remain untested.
+The later lifecycle and load checks above supersede the untested sleep/load
+status of this earlier run. Reboot remains untested; sustained thermal stress
+has not passed.
 
 ## Initial installation — 0.1.0
 
@@ -134,7 +192,7 @@ omarchy-shell community.omafans.service status
 omarchy-shell community.omafans status
 ```
 
-No reboot, suspend/resume, thermal stress, physical fan/sensor fault injection,
+At this initial 0.1.0 checkpoint, no reboot, suspend/resume, thermal stress, physical fan/sensor fault injection,
 secondary-fan validation or other laptop model was tested. The 92°C override
 was tested with fixtures, not by overheating the laptop. Enabled-at-boot is
 configuration evidence only. A daemon restart intentionally returns to Auto;

@@ -1,0 +1,1513 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-07",
+  "hardware_model": "ThinkPad T480s",
+  "runtime_version": "0.1.1",
+  "runtime_commit": "d93ef634fc1f87a9854ccfe2b9d8e5e5f1ad9c26",
+  "controller_sha256": "f721307de59a4562c3e97671585349b45dd8d1d96d4c3046a61c74afa0361b25",
+  "measurements": "local observations, not independently attested",
+  "load_tests": [
+    {
+      "test": "all_logical_cpus_unthrottled",
+      "result": "stopped_at_temperature_limit",
+      "planned_load_seconds": 120,
+      "logical_cpu_workers": 8,
+      "load_description": "bounded integer CPU work, one process per available logical CPU",
+      "cpu_stop_c": 96,
+      "controller_sensor_stop_c": 90,
+      "cpu_reported_critical_c": 100.0,
+      "stop_trigger": "cpu_temperature",
+      "approximate_load_seconds": 3.4,
+      "average_sampled_cpu_busy_percent": 100.0,
+      "peak_cpu_c": 96.0,
+      "peak_controller_sensor_c": 70.0,
+      "load_rpm_min": 3851,
+      "load_rpm_max": 3865,
+      "control_and_sensor_available_in_all_samples": true,
+      "all_workers_stopped": true,
+      "baseline_last": {
+        "seconds": 9.52,
+        "phase": "baseline",
+        "status": {
+          "mode": "curve",
+          "manual_percent": 70,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "available": true,
+          "service": true,
+          "control_enabled": true,
+          "rpm": 3851,
+          "percent": 43,
+          "temperature": 63.0,
+          "error": "",
+          "notice": "",
+          "ok": true
+        },
+        "cpu_max_c": 73.0,
+        "pwm1_enable": 1,
+        "pwm1": 109,
+        "watchdog_seconds": 45
+      },
+      "load_samples": [
+        {
+          "seconds": 11.65,
+          "phase": "load",
+          "status": {
+            "mode": "curve",
+            "manual_percent": 70,
+            "curve": [
+              [
+                40,
+                30
+              ],
+              [
+                55,
+                40
+              ],
+              [
+                65,
+                60
+              ],
+              [
+                75,
+                80
+              ],
+              [
+                85,
+                100
+              ]
+            ],
+            "available": true,
+            "service": true,
+            "control_enabled": true,
+            "rpm": 3857,
+            "percent": 43,
+            "temperature": 64.0,
+            "error": "",
+            "notice": "",
+            "ok": true
+          },
+          "cpu_max_c": 94.0,
+          "pwm1_enable": 1,
+          "pwm1": 109,
+          "watchdog_seconds": 45,
+          "cpu_busy_percent": 99.9
+        },
+        {
+          "seconds": 12.78,
+          "phase": "load",
+          "status": {
+            "mode": "curve",
+            "manual_percent": 70,
+            "curve": [
+              [
+                40,
+                30
+              ],
+              [
+                55,
+                40
+              ],
+              [
+                65,
+                60
+              ],
+              [
+                75,
+                80
+              ],
+              [
+                85,
+                100
+              ]
+            ],
+            "available": true,
+            "service": true,
+            "control_enabled": true,
+            "rpm": 3851,
+            "percent": 43,
+            "temperature": 64.0,
+            "error": "",
+            "notice": "",
+            "ok": true
+          },
+          "cpu_max_c": 94.0,
+          "pwm1_enable": 1,
+          "pwm1": 109,
+          "watchdog_seconds": 45,
+          "cpu_busy_percent": 100.0
+        },
+        {
+          "seconds": 13.91,
+          "phase": "load",
+          "status": {
+            "mode": "curve",
+            "manual_percent": 70,
+            "curve": [
+              [
+                40,
+                30
+              ],
+              [
+                55,
+                40
+              ],
+              [
+                65,
+                60
+              ],
+              [
+                75,
+                80
+              ],
+              [
+                85,
+                100
+              ]
+            ],
+            "available": true,
+            "service": true,
+            "control_enabled": true,
+            "rpm": 3865,
+            "percent": 71,
+            "temperature": 70.0,
+            "error": "",
+            "notice": "",
+            "ok": true
+          },
+          "cpu_max_c": 96.0,
+          "pwm1_enable": 1,
+          "pwm1": 182,
+          "watchdog_seconds": 45,
+          "cpu_busy_percent": 100.0
+        }
+      ],
+      "cooldown_last": {
+        "seconds": 44.29,
+        "phase": "cooldown",
+        "status": {
+          "mode": "auto",
+          "manual_percent": 70,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "available": true,
+          "service": true,
+          "control_enabled": true,
+          "rpm": 4059,
+          "percent": null,
+          "temperature": 62.0,
+          "error": "",
+          "notice": "",
+          "ok": true
+        },
+        "cpu_max_c": 71.0,
+        "pwm1_enable": 2,
+        "pwm1": 182,
+        "watchdog_seconds": 0
+      },
+      "final_widget": {
+        "available": true,
+        "service": true,
+        "control_enabled": true,
+        "mode": "auto",
+        "rpm": 4059,
+        "percent": null,
+        "temperature": 62,
+        "manual_percent": 70,
+        "curve": [
+          [
+            40,
+            30
+          ],
+          [
+            55,
+            40
+          ],
+          [
+            65,
+            60
+          ],
+          [
+            75,
+            80
+          ],
+          [
+            85,
+            100
+          ]
+        ],
+        "error": "",
+        "notice": ""
+      },
+      "final_service": "active"
+    },
+    {
+      "test": "all_logical_cpus_40_percent_worker_duty",
+      "result": "stopped_at_temperature_limit",
+      "planned_load_seconds": 120,
+      "logical_cpu_workers": 8,
+      "load_description": "bounded integer CPU work at 40% duty per logical CPU (8ms busy / 20ms cycle)",
+      "cpu_stop_c": 96,
+      "controller_sensor_stop_c": 90,
+      "cpu_reported_critical_c": 100.0,
+      "stop_trigger": "controller_temperature",
+      "approximate_load_seconds": 12.6,
+      "average_sampled_cpu_busy_percent": 51.4,
+      "peak_cpu_c": 95.0,
+      "peak_controller_sensor_c": 90.0,
+      "load_rpm_min": 3851,
+      "load_rpm_max": 5181,
+      "control_and_sensor_available_in_all_samples": true,
+      "all_workers_stopped": true,
+      "baseline_last": {
+        "seconds": 9.54,
+        "phase": "baseline",
+        "status": {
+          "mode": "curve",
+          "manual_percent": 70,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "available": true,
+          "service": true,
+          "control_enabled": true,
+          "rpm": 3851,
+          "percent": 43,
+          "temperature": 64.0,
+          "error": "",
+          "notice": "",
+          "ok": true
+        },
+        "cpu_max_c": 73.0,
+        "pwm1_enable": 1,
+        "pwm1": 109,
+        "watchdog_seconds": 45
+      },
+      "load_samples": [
+        {
+          "seconds": 11.59,
+          "phase": "load",
+          "status": {
+            "mode": "curve",
+            "manual_percent": 70,
+            "curve": [
+              [
+                40,
+                30
+              ],
+              [
+                55,
+                40
+              ],
+              [
+                65,
+                60
+              ],
+              [
+                75,
+                80
+              ],
+              [
+                85,
+                100
+              ]
+            ],
+            "available": true,
+            "service": true,
+            "control_enabled": true,
+            "rpm": 3851,
+            "percent": 43,
+            "temperature": 64.0,
+            "error": "",
+            "notice": "",
+            "ok": true
+          },
+          "cpu_max_c": 85.0,
+          "pwm1_enable": 1,
+          "pwm1": 109,
+          "watchdog_seconds": 45,
+          "cpu_busy_percent": 51.5
+        },
+        {
+          "seconds": 12.65,
+          "phase": "load",
+          "status": {
+            "mode": "curve",
+            "manual_percent": 70,
+            "curve": [
+              [
+                40,
+                30
+              ],
+              [
+                55,
+                40
+              ],
+              [
+                65,
+                60
+              ],
+              [
+                75,
+                80
+              ],
+              [
+                85,
+                100
+              ]
+            ],
+            "available": true,
+            "service": true,
+            "control_enabled": true,
+            "rpm": 3859,
+            "percent": 43,
+            "temperature": 68.0,
+            "error": "",
+            "notice": "",
+            "ok": true
+          },
+          "cpu_max_c": 88.0,
+          "pwm1_enable": 1,
+          "pwm1": 109,
+          "watchdog_seconds": 45,
+          "cpu_busy_percent": 50.5
+        },
+        {
+          "seconds": 13.7,
+          "phase": "load",
+          "status": {
+            "mode": "curve",
+            "manual_percent": 70,
+            "curve": [
+              [
+                40,
+                30
+              ],
+              [
+                55,
+                40
+              ],
+              [
+                65,
+                60
+              ],
+              [
+                75,
+                80
+              ],
+              [
+                85,
+                100
+              ]
+            ],
+            "available": true,
+            "service": true,
+            "control_enabled": true,
+            "rpm": 3861,
+            "percent": 43,
+            "temperature": 68.0,
+            "error": "",
+            "notice": "",
+            "ok": true
+          },
+          "cpu_max_c": 90.0,
+          "pwm1_enable": 1,
+          "pwm1": 109,
+          "watchdog_seconds": 45,
+          "cpu_busy_percent": 52.2
+        },
+        {
+          "seconds": 14.75,
+          "phase": "load",
+          "status": {
+            "mode": "curve",
+            "manual_percent": 70,
+            "curve": [
+              [
+                40,
+                30
+              ],
+              [
+                55,
+                40
+              ],
+              [
+                65,
+                60
+              ],
+              [
+                75,
+                80
+              ],
+              [
+                85,
+                100
+              ]
+            ],
+            "available": true,
+            "service": true,
+            "control_enabled": true,
+            "rpm": 3916,
+            "percent": 71,
+            "temperature": 75.0,
+            "error": "",
+            "notice": "",
+            "ok": true
+          },
+          "cpu_max_c": 88.0,
+          "pwm1_enable": 1,
+          "pwm1": 182,
+          "watchdog_seconds": 45,
+          "cpu_busy_percent": 47.4
+        },
+        {
+          "seconds": 15.81,
+          "phase": "load",
+          "status": {
+            "mode": "curve",
+            "manual_percent": 70,
+            "curve": [
+              [
+                40,
+                30
+              ],
+              [
+                55,
+                40
+              ],
+              [
+                65,
+                60
+              ],
+              [
+                75,
+                80
+              ],
+              [
+                85,
+                100
+              ]
+            ],
+            "available": true,
+            "service": true,
+            "control_enabled": true,
+            "rpm": 4143,
+            "percent": 71,
+            "temperature": 75.0,
+            "error": "",
+            "notice": "",
+            "ok": true
+          },
+          "cpu_max_c": 89.0,
+          "pwm1_enable": 1,
+          "pwm1": 182,
+          "watchdog_seconds": 45,
+          "cpu_busy_percent": 61.3
+        },
+        {
+          "seconds": 16.88,
+          "phase": "load",
+          "status": {
+            "mode": "curve",
+            "manual_percent": 70,
+            "curve": [
+              [
+                40,
+                30
+              ],
+              [
+                55,
+                40
+              ],
+              [
+                65,
+                60
+              ],
+              [
+                75,
+                80
+              ],
+              [
+                85,
+                100
+              ]
+            ],
+            "available": true,
+            "service": true,
+            "control_enabled": true,
+            "rpm": 4437,
+            "percent": 85,
+            "temperature": 82.0,
+            "error": "",
+            "notice": "",
+            "ok": true
+          },
+          "cpu_max_c": 86.0,
+          "pwm1_enable": 1,
+          "pwm1": 218,
+          "watchdog_seconds": 45,
+          "cpu_busy_percent": 55.8
+        },
+        {
+          "seconds": 17.93,
+          "phase": "load",
+          "status": {
+            "mode": "curve",
+            "manual_percent": 70,
+            "curve": [
+              [
+                40,
+                30
+              ],
+              [
+                55,
+                40
+              ],
+              [
+                65,
+                60
+              ],
+              [
+                75,
+                80
+              ],
+              [
+                85,
+                100
+              ]
+            ],
+            "available": true,
+            "service": true,
+            "control_enabled": true,
+            "rpm": 4716,
+            "percent": 85,
+            "temperature": 82.0,
+            "error": "",
+            "notice": "",
+            "ok": true
+          },
+          "cpu_max_c": 95.0,
+          "pwm1_enable": 1,
+          "pwm1": 218,
+          "watchdog_seconds": 45,
+          "cpu_busy_percent": 52.7
+        },
+        {
+          "seconds": 18.98,
+          "phase": "load",
+          "status": {
+            "mode": "curve",
+            "manual_percent": 70,
+            "curve": [
+              [
+                40,
+                30
+              ],
+              [
+                55,
+                40
+              ],
+              [
+                65,
+                60
+              ],
+              [
+                75,
+                80
+              ],
+              [
+                85,
+                100
+              ]
+            ],
+            "available": true,
+            "service": true,
+            "control_enabled": true,
+            "rpm": 4991,
+            "percent": 85,
+            "temperature": 88.0,
+            "error": "",
+            "notice": "",
+            "ok": true
+          },
+          "cpu_max_c": 89.0,
+          "pwm1_enable": 1,
+          "pwm1": 218,
+          "watchdog_seconds": 45,
+          "cpu_busy_percent": 48.6
+        },
+        {
+          "seconds": 20.03,
+          "phase": "load",
+          "status": {
+            "mode": "curve",
+            "manual_percent": 70,
+            "curve": [
+              [
+                40,
+                30
+              ],
+              [
+                55,
+                40
+              ],
+              [
+                65,
+                60
+              ],
+              [
+                75,
+                80
+              ],
+              [
+                85,
+                100
+              ]
+            ],
+            "available": true,
+            "service": true,
+            "control_enabled": true,
+            "rpm": 5181,
+            "percent": 85,
+            "temperature": 88.0,
+            "error": "",
+            "notice": "",
+            "ok": true
+          },
+          "cpu_max_c": 90.0,
+          "pwm1_enable": 1,
+          "pwm1": 218,
+          "watchdog_seconds": 45,
+          "cpu_busy_percent": 48.8
+        },
+        {
+          "seconds": 21.09,
+          "phase": "load",
+          "status": {
+            "mode": "curve",
+            "manual_percent": 70,
+            "curve": [
+              [
+                40,
+                30
+              ],
+              [
+                55,
+                40
+              ],
+              [
+                65,
+                60
+              ],
+              [
+                75,
+                80
+              ],
+              [
+                85,
+                100
+              ]
+            ],
+            "available": true,
+            "service": true,
+            "control_enabled": true,
+            "rpm": 5102,
+            "percent": 100,
+            "temperature": 89.0,
+            "error": "",
+            "notice": "",
+            "ok": true
+          },
+          "cpu_max_c": 92.0,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "watchdog_seconds": 45,
+          "cpu_busy_percent": 49.0
+        },
+        {
+          "seconds": 22.13,
+          "phase": "load",
+          "status": {
+            "mode": "curve",
+            "manual_percent": 70,
+            "curve": [
+              [
+                40,
+                30
+              ],
+              [
+                55,
+                40
+              ],
+              [
+                65,
+                60
+              ],
+              [
+                75,
+                80
+              ],
+              [
+                85,
+                100
+              ]
+            ],
+            "available": true,
+            "service": true,
+            "control_enabled": true,
+            "rpm": 5076,
+            "percent": 100,
+            "temperature": 89.0,
+            "error": "",
+            "notice": "",
+            "ok": true
+          },
+          "cpu_max_c": 93.0,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "watchdog_seconds": 45,
+          "cpu_busy_percent": 53.5
+        },
+        {
+          "seconds": 23.18,
+          "phase": "load",
+          "status": {
+            "mode": "curve",
+            "manual_percent": 70,
+            "curve": [
+              [
+                40,
+                30
+              ],
+              [
+                55,
+                40
+              ],
+              [
+                65,
+                60
+              ],
+              [
+                75,
+                80
+              ],
+              [
+                85,
+                100
+              ]
+            ],
+            "available": true,
+            "service": true,
+            "control_enabled": true,
+            "rpm": 5076,
+            "percent": 100,
+            "temperature": 90.0,
+            "error": "",
+            "notice": "",
+            "ok": true
+          },
+          "cpu_max_c": 93.0,
+          "pwm1_enable": 1,
+          "pwm1": 255,
+          "watchdog_seconds": 45,
+          "cpu_busy_percent": 45.4
+        }
+      ],
+      "cooldown_last": {
+        "seconds": 53.55,
+        "phase": "cooldown",
+        "status": {
+          "mode": "auto",
+          "manual_percent": 70,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "available": true,
+          "service": true,
+          "control_enabled": true,
+          "rpm": 4661,
+          "percent": null,
+          "temperature": 70.0,
+          "error": "",
+          "notice": "",
+          "ok": true
+        },
+        "cpu_max_c": 75.0,
+        "pwm1_enable": 2,
+        "pwm1": 255,
+        "watchdog_seconds": 0
+      },
+      "final_widget": {
+        "available": true,
+        "service": true,
+        "control_enabled": true,
+        "mode": "auto",
+        "rpm": 4663,
+        "percent": null,
+        "temperature": 69,
+        "manual_percent": 70,
+        "curve": [
+          [
+            40,
+            30
+          ],
+          [
+            55,
+            40
+          ],
+          [
+            65,
+            60
+          ],
+          [
+            75,
+            80
+          ],
+          [
+            85,
+            100
+          ]
+        ],
+        "error": "",
+        "notice": ""
+      },
+      "final_service": "active"
+    }
+  ],
+  "suspend_resume": {
+    "result": "passed_documented_recovery_contract",
+    "method": "systemctl suspend with RTC wake alarm",
+    "selected_sleep_mode": "deep",
+    "scheduled_wake_seconds": 45,
+    "measured_sleep_seconds": 43.52,
+    "same_boot": true,
+    "installed_controller_sha256": "f721307de59a4562c3e97671585349b45dd8d1d96d4c3046a61c74afa0361b25",
+    "initial_harness_result": "failed",
+    "initial_assertion_limitation": "Expected immediate availability in every post-wake sample; the documented bounded sensor recovery permits a temporary unavailable state in firmware Auto.",
+    "before": {
+      "status": {
+        "mode": "curve",
+        "manual_percent": 71,
+        "curve": [
+          [
+            40,
+            30
+          ],
+          [
+            55,
+            40
+          ],
+          [
+            65,
+            60
+          ],
+          [
+            75,
+            80
+          ],
+          [
+            85,
+            100
+          ]
+        ],
+        "available": true,
+        "service": true,
+        "control_enabled": true,
+        "rpm": 3792,
+        "percent": 43,
+        "temperature": 62.0,
+        "error": "",
+        "notice": "",
+        "ok": true
+      },
+      "pwm1_enable": 1,
+      "pwm1": 109,
+      "watchdog_seconds": 45
+    },
+    "resume_samples": [
+      {
+        "status": {
+          "mode": "auto",
+          "manual_percent": 71,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "available": true,
+          "service": true,
+          "control_enabled": false,
+          "rpm": 3121,
+          "percent": null,
+          "temperature": null,
+          "error": "Temperature sensor unavailable; firmware Auto active; waiting for stable readings",
+          "notice": "",
+          "ok": false
+        },
+        "pwm1_enable": 2,
+        "pwm1": 109,
+        "watchdog_seconds": 0,
+        "resume_seconds": 0.14
+      },
+      {
+        "status": {
+          "mode": "auto",
+          "manual_percent": 71,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "available": true,
+          "service": true,
+          "control_enabled": false,
+          "rpm": 3205,
+          "percent": null,
+          "temperature": null,
+          "error": "Temperature sensor unavailable; firmware Auto active; waiting for stable readings",
+          "notice": "",
+          "ok": false
+        },
+        "pwm1_enable": 2,
+        "pwm1": 109,
+        "watchdog_seconds": 0,
+        "resume_seconds": 2.17
+      },
+      {
+        "status": {
+          "mode": "auto",
+          "manual_percent": 71,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "available": true,
+          "service": true,
+          "control_enabled": false,
+          "rpm": 3325,
+          "percent": null,
+          "temperature": 53.0,
+          "error": "Temperature sensor recovering; firmware Auto active",
+          "notice": "",
+          "ok": false
+        },
+        "pwm1_enable": 2,
+        "pwm1": 109,
+        "watchdog_seconds": 0,
+        "resume_seconds": 4.2
+      },
+      {
+        "status": {
+          "mode": "auto",
+          "manual_percent": 71,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "available": true,
+          "service": true,
+          "control_enabled": false,
+          "rpm": 3764,
+          "percent": null,
+          "temperature": 57.0,
+          "error": "Temperature sensor recovering; firmware Auto active",
+          "notice": "",
+          "ok": false
+        },
+        "pwm1_enable": 2,
+        "pwm1": 109,
+        "watchdog_seconds": 0,
+        "resume_seconds": 6.24
+      },
+      {
+        "status": {
+          "mode": "auto",
+          "manual_percent": 71,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "available": true,
+          "service": true,
+          "control_enabled": true,
+          "rpm": 3708,
+          "percent": null,
+          "temperature": 63.0,
+          "error": "",
+          "notice": "",
+          "ok": true
+        },
+        "pwm1_enable": 2,
+        "pwm1": 109,
+        "watchdog_seconds": 0,
+        "resume_seconds": 8.27
+      },
+      {
+        "status": {
+          "mode": "auto",
+          "manual_percent": 71,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "available": true,
+          "service": true,
+          "control_enabled": true,
+          "rpm": 4115,
+          "percent": null,
+          "temperature": 61.0,
+          "error": "",
+          "notice": "",
+          "ok": true
+        },
+        "pwm1_enable": 2,
+        "pwm1": 109,
+        "watchdog_seconds": 0,
+        "resume_seconds": 10.31
+      },
+      {
+        "status": {
+          "mode": "auto",
+          "manual_percent": 71,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "available": true,
+          "service": true,
+          "control_enabled": true,
+          "rpm": 4076,
+          "percent": null,
+          "temperature": 63.0,
+          "error": "",
+          "notice": "",
+          "ok": true
+        },
+        "pwm1_enable": 2,
+        "pwm1": 109,
+        "watchdog_seconds": 0,
+        "resume_seconds": 12.34
+      },
+      {
+        "status": {
+          "mode": "auto",
+          "manual_percent": 71,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "available": true,
+          "service": true,
+          "control_enabled": true,
+          "rpm": 4061,
+          "percent": null,
+          "temperature": 66.0,
+          "error": "",
+          "notice": "",
+          "ok": true
+        },
+        "pwm1_enable": 2,
+        "pwm1": 109,
+        "watchdog_seconds": 0,
+        "resume_seconds": 14.37
+      },
+      {
+        "status": {
+          "mode": "auto",
+          "manual_percent": 71,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "available": true,
+          "service": true,
+          "control_enabled": true,
+          "rpm": 4061,
+          "percent": null,
+          "temperature": 65.0,
+          "error": "",
+          "notice": "",
+          "ok": true
+        },
+        "pwm1_enable": 2,
+        "pwm1": 109,
+        "watchdog_seconds": 0,
+        "resume_seconds": 16.41
+      },
+      {
+        "status": {
+          "mode": "auto",
+          "manual_percent": 71,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "available": true,
+          "service": true,
+          "control_enabled": true,
+          "rpm": 4064,
+          "percent": null,
+          "temperature": 68.0,
+          "error": "",
+          "notice": "",
+          "ok": true
+        },
+        "pwm1_enable": 2,
+        "pwm1": 109,
+        "watchdog_seconds": 0,
+        "resume_seconds": 18.45
+      }
+    ],
+    "recovered_after_seconds": 8.27,
+    "final_auto": {
+      "status": {
+        "mode": "auto",
+        "manual_percent": 71,
+        "curve": [
+          [
+            40,
+            30
+          ],
+          [
+            55,
+            40
+          ],
+          [
+            65,
+            60
+          ],
+          [
+            75,
+            80
+          ],
+          [
+            85,
+            100
+          ]
+        ],
+        "available": true,
+        "service": true,
+        "control_enabled": true,
+        "rpm": 4067,
+        "percent": null,
+        "temperature": 60.0,
+        "error": "",
+        "notice": "",
+        "ok": true
+      },
+      "pwm1_enable": 2,
+      "pwm1": 109,
+      "watchdog_seconds": 0
+    },
+    "rtc_alarm_cleared": true,
+    "corrected_assertion_evaluation": "firmware Auto throughout sensor gap, automatic recovery within 20 seconds, healthy subsequent samples, unchanged daemon, fresh explicit control request",
+    "same_daemon_process": true,
+    "kernel_suspend_messages": [
+      "PM: suspend entry (deep)",
+      "PM: suspend exit"
+    ],
+    "post_recovery_healthy_samples": 6,
+    "fresh_curve_request": {
+      "status": {
+        "mode": "curve",
+        "manual_percent": 71,
+        "curve": [
+          [
+            40,
+            30
+          ],
+          [
+            55,
+            40
+          ],
+          [
+            65,
+            60
+          ],
+          [
+            75,
+            80
+          ],
+          [
+            85,
+            100
+          ]
+        ],
+        "available": true,
+        "service": true,
+        "control_enabled": true,
+        "rpm": 4067,
+        "percent": 43,
+        "temperature": 60.0,
+        "error": "",
+        "notice": "",
+        "ok": true
+      },
+      "pwm1_enable": 1,
+      "pwm1": 109,
+      "watchdog_seconds": 45
+    }
+  },
+  "reboot": {
+    "result": "not_run",
+    "observer_prepared": true,
+    "requires": "actual reboot, changed-boot startup observations and privileged installed-source hash verification",
+    "observer_installed": true
+  }
+}

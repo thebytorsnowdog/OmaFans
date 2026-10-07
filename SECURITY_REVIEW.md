@@ -62,6 +62,8 @@ source release for review and testing, not a claim of hardware certification.
 | Live system installation | Root-owned daemon runs under the supplied systemd unit on a T480s; service enabled, former controller stopped/disabled |
 | Real hardware control and recovery | Manual, Curve, Auto, heartbeat expiry, paused-daemon kernel watchdog event and graceful stop/restart passed; [measurements and source identity](docs/hardware-validation.md) |
 | Sensor recovery fix | Simulated sensor loss using installed 0.1.1 controller with real hardware recovered in 6.16 seconds with no recovery writes; live widget modes and two-minute observation passed |
+| Real deep sleep/resume | One 43.52-second sleep reproduced a temporary sensor gap; firmware Auto stayed active and control recovered after 8.27 seconds without restarting the daemon; a fresh Curve request passed |
+| CPU load attempts | Full load stopped at the 96°C CPU test limit after about 3 seconds; reduced duty stopped at the 90°C control-sensor test limit after about 13 seconds. Fan ramping and healthy status were observed, but sustained thermal validation did not pass |
 | Live Git installation/update | Native add and update from this public repository passed on the same T480s; new widget enabled and former widget disabled |
 
 Exact source identity and CI results are attached to the Git commit and its
@@ -86,13 +88,18 @@ marketplace approval or a guarantee of adequate cooling.
 
 ## Limits and checks not performed
 
-- Live control was checked on one T480s. No thermal stress test, hardware fault
-  injection, suspend/resume or reboot test was performed. The 92°C safeguard
-  has fixture evidence only. Watchdog firing was tested at level 7; a live
+- Live control was checked on one T480s. One real deep sleep/resume cycle passed
+  the documented safe-recovery behavior. CPU-load attempts stopped at test
+  temperature limits; sustained thermal stress has not passed. Reboot and
+  physical hardware fault injection remain untested. See the
+  [lifecycle and load evidence](docs/hardware-validation.md#lifecycle-and-load-checks--011).
+  The 92°C safeguard has fixture evidence only. Watchdog firing was tested at level 7; a live
   transition from a lower level to firmware Auto was not tested.
 - Only the first ThinkPad thermal input controls the 92°C override. Sensor
   mapping, other components, RPM accuracy, cooling effectiveness and secondary
-  fans are not validated.
+  fans are not validated. During the full-load attempt, the hottest CPU reading
+  reached 96°C while the control input read 70°C. The override is not a
+  CPU-core temperature limit or proof of adequate sustained cooling.
 - The UI was exercised on one horizontal-bar display. Vertical placement,
   multiple monitors and full-shell restart behavior remain unverified.
 - No separate machine has been tested. Native add/update passed on the live

@@ -15,7 +15,14 @@ maintained community plugin, unaffiliated with Omarchy or Lenovo. It is not a
 universal laptop fan controller. The daemon and widget are running on a
 ThinkPad T480s, with real fan writes, heartbeat expiry, kernel watchdog firing
 and service stop/restart checked. See the [measured hardware results](docs/hardware-validation.md).
-Thermal stress, suspend/resume, reboot and other models remain untested.
+One deep sleep/resume check passed: after a temporary sensor gap, control became
+available 8.27 seconds after waking, while firmware Auto remained active throughout.
+Reboot and other models remain untested.
+**Sustained thermal stress has not passed:** full and reduced CPU-load attempts
+stopped at preset temperature limits. Fan response and sensor availability were
+observed, but these short runs do not establish adequate cooling under sustained
+load. The displayed ThinkPad sensor can lag the hottest CPU reading; the 92°C
+override monitors that ThinkPad input, not every CPU core.
 Start with monitoring, review the code, and assess your hardware before enabling
 control. See [verification scope](SECURITY_REVIEW.md).
 
