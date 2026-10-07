@@ -366,10 +366,11 @@ def serve():
         Path(SOCKET_PATH).unlink(missing_ok=True)
         with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as listener:
             listener.bind(SOCKET_PATH)
-            os.chown(SOCKET_PATH, 0, config["gid"])
-            # Only the configured primary group can connect; SO_PEERCRED then
-            # checks the exact configured UID before any request is read.
-            os.chmod(SOCKET_PATH, 0o660)  # nosec B103
+            # The root-owned parent prevents socket replacement. Only the
+            # selected user can connect; SO_PEERCRED independently authenticates
+            # both ends even if that trusted user changes the inode's mode.
+            os.chown(SOCKET_PATH, config["uid"], config["gid"])
+            os.chmod(SOCKET_PATH, 0o600)
             listener.listen(4)
             next_tick = time.monotonic()
             while running:

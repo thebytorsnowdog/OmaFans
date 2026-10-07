@@ -14,9 +14,10 @@ installed, root-owned daemon writes hardware. systemd starts its standalone
 Python file with `-I`; it imports only the standard library and cannot read
 home directories under the supplied service sandbox.
 
-IPC uses a root-owned local Unix socket with mode 0660, restricted to the
-configured account's primary group. The daemon additionally checks the kernel's
-`SO_PEERCRED` UID before reading data. Group membership alone is insufficient.
+IPC uses a local Unix socket with mode 0600, owned by the configured desktop
+account inside a root-owned directory that prevents socket replacement. The
+daemon additionally checks the kernel's `SO_PEERCRED` UID before reading data,
+even if that trusted account changes its socket permissions.
 The client checks that the server's peer UID is root. There is no network
 protocol and no request can supply a command, pathname, UID or executable.
 
@@ -51,9 +52,9 @@ directories, atomic replacement, and fixed `systemctl` argument arrays.
 
 ## Static-analysis exceptions
 
-Bandit has three narrow, reviewed annotations: `B404` for importing subprocess
+Bandit has two narrow, reviewed annotations: `B404` for importing subprocess
 in the explicit installer, `B603` for its fixed `/usr/bin/systemctl` argument
-arrays, and `B103` for the group-accessible Unix socket. These are deliberate
+arrays. These are deliberate
 capabilities with the boundaries described above. They are not blanket rule
 exclusions; other instances remain checked. Omarchy's advisory scanner also
 reports process execution, output collection, installation and service

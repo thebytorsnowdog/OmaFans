@@ -39,7 +39,7 @@ source release for review and testing, not a claim of hardware certification.
 | --- | --- |
 | `python3 -m unittest discover -s tests -v` | 35 tests passed; fake hardware plus real Unix socket pairs |
 | QtTest service suite | Eight behavior tests plus init/cleanup passed; no failures |
-| Bandit 1.9.4 | No outstanding findings on daemon, client and setup code; three narrow reviewed annotations described in SECURITY.md |
+| Bandit 1.9.4 | No outstanding findings on daemon, client and setup code; two narrow reviewed annotations described in SECURITY.md |
 | Gitleaks 8.30.1 | No secrets found in candidate source; full-history scan also required before publication |
 | Targeted personal-information scan | No personal names, personal mail addresses or home paths in candidate files |
 | Portable Omarchy validation | Valid manifest and entry points |
@@ -62,7 +62,10 @@ collection, installation, privilege-tool references and service management.
 These are intentional capabilities. The helper has bounded output and a
 five-second QML deadline. Privileged work is confined to reviewed, separate
 machine setup and the installed controller; the widget performs no elevation.
-Bandit's socket-mode and fixed-subprocess exceptions are explained in
+The additional CodeQL scan flagged group-write permissions on the local socket.
+Access was narrowed to mode 0600 for the selected desktop account; the protected
+parent directory and exact peer-UID checks remain in place.
+Bandit's fixed-subprocess exceptions are explained in
 [SECURITY.md](SECURITY.md). No blanket rule exclusion was added.
 
 These advisory checks are **not a security audit**, certification, warranty,
