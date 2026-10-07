@@ -7,7 +7,7 @@ import threading
 import time
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import omafans as app
 
@@ -86,13 +86,98 @@ class ControllerTests(unittest.TestCase):
         self.control.tick()
         self.assertEqual(self.control.state["mode"], "auto")
 
-    def test_sensor_failure_latches_control_off(self):
+    def test_sensor_failure_returns_to_auto_then_recovers_without_resuming_manual(self):
         self.set_manual()
         self.hardware.temp = None
         self.assertFalse(self.control.tick())
         self.assertEqual(self.hardware.values["pwm1_enable"], 2)
+        events = list(self.hardware.events)
         self.hardware.temp = 45000
         self.assertFalse(self.set_manual()["ok"])
+        self.assertFalse(self.control.status()["control_enabled"])
+        for index in range(3):
+            self.now += 2
+            self.assertEqual(self.control.tick(), index == 2)
+        self.assertEqual(self.hardware.events, events)
+        self.assertTrue(self.control.status()["control_enabled"])
+        self.assertEqual(self.control.status()["error"], "")
+        self.assertEqual(self.control.state["mode"], "auto")
+        self.assertIsNone(self.control.last_heartbeat)
+        self.control.request({"command": "heartbeat"})
+        self.assertEqual(self.control.state["mode"], "auto")
+        self.assertTrue(self.set_manual()["ok"])
+
+    def test_sensor_recovery_requires_spaced_consecutive_valid_samples(self):
+        self.hardware.temp = None
+        self.control.tick()
+        for temp in (45000, 45000, None, 45000, 45000, 92000):
+            self.now += 2
+            self.hardware.temp = temp
+            self.assertFalse(self.control.tick())
+        self.hardware.temp = 45000
+        for _ in range(20):
+            self.assertFalse(self.control.tick())
+        self.now += 10  # A suspend-sized sampling gap restarts the streak.
+        self.assertFalse(self.control.tick())
+        self.now += 2
+        self.assertFalse(self.control.tick())
+        self.now += 2
+        self.assertTrue(self.control.tick())
+
+    def test_sensor_recovery_checks_firmware_mode_and_kernel_control(self):
+        self.hardware.temp = None
+        self.control.tick()
+        self.hardware.temp = 45000
+        events = list(self.hardware.events)
+        for ready, enable in ((False, 2), (True, 1), (True, None)):
+            self.hardware.ready = ready
+            self.hardware.values["pwm1_enable"] = enable
+            for _ in range(4):
+                self.now += 2
+                self.assertFalse(self.control.tick())
+                self.assertNotIn("firmware Auto active", self.control.error)
+        self.assertEqual(self.hardware.events, events)
+        self.hardware.values["pwm1_enable"] = 2
+        for _ in range(3):
+            self.now += 2
+            self.control.tick()
+        self.assertTrue(self.control.status()["control_enabled"])
+
+    def test_sensor_failure_with_only_manual_fallback_never_auto_recovers(self):
+        self.hardware.failed.add(("pwm1_enable", 2))
+        self.hardware.temp = None
+        self.control.tick()
+        self.hardware.failed.clear()
+        self.hardware.temp = 45000
+        events = list(self.hardware.events)
+        for _ in range(100):
+            self.now += 2
+            self.assertFalse(self.control.tick())
+        self.assertEqual(self.hardware.events, events)
+        self.assertFalse(self.control.status()["control_enabled"])
+
+    def test_write_fault_does_not_auto_recover_even_when_hardware_recovers(self):
+        self.hardware.failed.add(("pwm1", 109))
+        self.assertFalse(self.set_manual()["ok"])
+        self.hardware.failed.clear()
+        events = list(self.hardware.events)
+        for _ in range(100):
+            self.now += 2
+            self.assertFalse(self.control.tick())
+        self.assertEqual(self.hardware.events, events)
+        self.assertFalse(self.control.status()["control_enabled"])
+
+    def test_sensor_failure_with_failed_watchdog_disarm_stays_latched(self):
+        self.hardware.failed.add(("watchdog", 0))
+        self.hardware.temp = None
+        self.control.tick()
+        self.hardware.failed.clear()
+        self.hardware.temp = 45000
+        events = list(self.hardware.events)
+        for _ in range(100):
+            self.now += 2
+            self.assertFalse(self.control.tick())
+        self.assertEqual(self.hardware.events, events)
         self.assertFalse(self.control.status()["control_enabled"])
 
     def test_overheat_overrides_expired_client_and_clears_request(self):
@@ -191,6 +276,27 @@ class ControllerTests(unittest.TestCase):
 
 
 class ProtocolTests(unittest.TestCase):
+    def test_startup_sensor_gap_keeps_daemon_available_for_recovery(self):
+        hw = Hardware()
+        hw.temp = None
+        runtime = MagicMock()
+        runtime.lstat.return_value = os.stat_result((stat.S_IFDIR | 0o755, 0, 0, 1, 0, 0, 0, 0, 0, 0))
+        listener = MagicMock()
+        with patch.object(app.os, "geteuid", return_value=0), \
+             patch.object(app, "read_config", return_value={"uid": 1000, "gid": 1000}), \
+             patch.object(app, "Hardware", return_value=hw), \
+             patch.object(app, "Path") as path, \
+             patch.object(app.socket, "socket") as factory, \
+             patch.object(app.os, "chmod"), patch.object(app.os, "chown"), \
+             patch.object(app.signal, "signal"), \
+             patch.object(app.select, "select", side_effect=RuntimeError("test loop reached")):
+            path.return_value.parent = runtime
+            factory.return_value.__enter__.return_value = listener
+            with self.assertRaisesRegex(RuntimeError, "test loop reached"):
+                app.serve()
+        listener.listen.assert_called_once_with(4)
+        self.assertEqual(hw.values["pwm1_enable"], 2)
+
     def test_json_rejects_duplicates_nonfinite_nested_nonobjects_and_large_data(self):
         for raw in [b'{"command":"status","command":"set"}', b'{"x":NaN}', b'{"x":1e999}', b'[]', b'null', b'\xff', b'{"x":' + b'[' * 2000 + b'0' + b']' * 2000 + b'}', b'x' * 4097]:
             with self.subTest(raw=raw[:30]), self.assertRaises(ValueError):

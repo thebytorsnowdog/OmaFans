@@ -1,0 +1,491 @@
+{
+  "controller_sha256": "f721307de59a4562c3e97671585349b45dd8d1d96d4c3046a61c74afa0361b25",
+  "simulated_sensor_loss_on_real_hardware": {
+    "fault": {
+      "mode": "auto",
+      "manual_percent": 100,
+      "curve": [
+        [
+          40,
+          30
+        ],
+        [
+          55,
+          40
+        ],
+        [
+          65,
+          60
+        ],
+        [
+          75,
+          80
+        ],
+        [
+          85,
+          100
+        ]
+      ],
+      "available": true,
+      "service": true,
+      "control_enabled": false,
+      "rpm": 4067,
+      "percent": null,
+      "temperature": null,
+      "error": "Temperature sensor unavailable; firmware Auto active; waiting for stable readings",
+      "notice": ""
+    },
+    "samples": [
+      {
+        "seconds": 2.05,
+        "status": {
+          "mode": "auto",
+          "manual_percent": 100,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "available": true,
+          "service": true,
+          "control_enabled": false,
+          "rpm": 4103,
+          "percent": null,
+          "temperature": 61.0,
+          "error": "Temperature sensor recovering; firmware Auto active",
+          "notice": ""
+        }
+      },
+      {
+        "seconds": 4.11,
+        "status": {
+          "mode": "auto",
+          "manual_percent": 100,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "available": true,
+          "service": true,
+          "control_enabled": false,
+          "rpm": 4069,
+          "percent": null,
+          "temperature": 61.0,
+          "error": "Temperature sensor recovering; firmware Auto active",
+          "notice": ""
+        }
+      },
+      {
+        "seconds": 6.16,
+        "status": {
+          "mode": "auto",
+          "manual_percent": 100,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "available": true,
+          "service": true,
+          "control_enabled": true,
+          "rpm": 4060,
+          "percent": null,
+          "temperature": 63.0,
+          "error": "",
+          "notice": ""
+        }
+      }
+    ],
+    "recovery_writes": 0,
+    "explicit_curve_request_after_recovery": "accepted"
+  },
+  "installed_system_service": {
+    "mode": "auto",
+    "manual_percent": 60,
+    "curve": [
+      [
+        40,
+        30
+      ],
+      [
+        55,
+        40
+      ],
+      [
+        65,
+        60
+      ],
+      [
+        75,
+        80
+      ],
+      [
+        85,
+        100
+      ]
+    ],
+    "available": true,
+    "service": true,
+    "control_enabled": true,
+    "rpm": 4059,
+    "percent": null,
+    "temperature": 63.0,
+    "error": "",
+    "notice": "",
+    "ok": true
+  },
+  "service_result": "success",
+  "date": "2026-10-07",
+  "version": "0.1.1",
+  "runtime_commit": "d93ef634fc1f87a9854ccfe2b9d8e5e5f1ad9c26",
+  "hardware": "ThinkPad T480s",
+  "live_widget": {
+    "manual_100": {
+      "status": {
+        "available": true,
+        "service": true,
+        "control_enabled": true,
+        "mode": "manual",
+        "rpm": 5119,
+        "percent": 100,
+        "temperature": 63,
+        "manual_percent": 100,
+        "curve": [
+          [
+            40,
+            30
+          ],
+          [
+            55,
+            40
+          ],
+          [
+            65,
+            60
+          ],
+          [
+            75,
+            80
+          ],
+          [
+            85,
+            100
+          ]
+        ],
+        "error": "",
+        "notice": ""
+      },
+      "pwm1_enable": 1,
+      "pwm1": 255,
+      "watchdog": 45,
+      "rpm": 5076
+    },
+    "manual_70": {
+      "status": {
+        "available": true,
+        "service": true,
+        "control_enabled": true,
+        "mode": "manual",
+        "rpm": 5076,
+        "percent": 71,
+        "temperature": 63,
+        "manual_percent": 70,
+        "curve": [
+          [
+            40,
+            30
+          ],
+          [
+            55,
+            40
+          ],
+          [
+            65,
+            60
+          ],
+          [
+            75,
+            80
+          ],
+          [
+            85,
+            100
+          ]
+        ],
+        "error": "",
+        "notice": ""
+      },
+      "pwm1_enable": 1,
+      "pwm1": 182,
+      "watchdog": 45,
+      "rpm": 5033
+    },
+    "auto": {
+      "status": {
+        "available": true,
+        "service": true,
+        "control_enabled": true,
+        "mode": "auto",
+        "rpm": 5016,
+        "percent": null,
+        "temperature": 63,
+        "manual_percent": 70,
+        "curve": [
+          [
+            40,
+            30
+          ],
+          [
+            55,
+            40
+          ],
+          [
+            65,
+            60
+          ],
+          [
+            75,
+            80
+          ],
+          [
+            85,
+            100
+          ]
+        ],
+        "error": "",
+        "notice": ""
+      },
+      "pwm1_enable": 2,
+      "pwm1": 182,
+      "watchdog": 0,
+      "rpm": 4966
+    },
+    "curve": {
+      "status": {
+        "available": true,
+        "service": true,
+        "control_enabled": true,
+        "mode": "curve",
+        "rpm": 4942,
+        "percent": 43,
+        "temperature": 63,
+        "manual_percent": 70,
+        "curve": [
+          [
+            40,
+            30
+          ],
+          [
+            55,
+            40
+          ],
+          [
+            65,
+            60
+          ],
+          [
+            75,
+            80
+          ],
+          [
+            85,
+            100
+          ]
+        ],
+        "error": "",
+        "notice": ""
+      },
+      "pwm1_enable": 1,
+      "pwm1": 109,
+      "watchdog": 45,
+      "rpm": 4870
+    },
+    "panel": {
+      "available": true,
+      "service": true,
+      "control_enabled": true,
+      "mode": "curve",
+      "rpm": 4942,
+      "percent": 43,
+      "temperature": 63,
+      "manual_percent": 70,
+      "curve": [
+        [
+          40,
+          30
+        ],
+        [
+          55,
+          40
+        ],
+        [
+          65,
+          60
+        ],
+        [
+          75,
+          80
+        ],
+        [
+          85,
+          100
+        ]
+      ],
+      "error": "",
+      "notice": ""
+    },
+    "observation": {
+      "samples": 59,
+      "duration_seconds": 120.41,
+      "all_healthy_curve": true,
+      "temperature_c_range": [
+        62,
+        67
+      ],
+      "rpm_range": [
+        3785,
+        4830
+      ],
+      "first": {
+        "seconds": 0.05,
+        "status": {
+          "available": true,
+          "service": true,
+          "control_enabled": true,
+          "mode": "curve",
+          "rpm": 4942,
+          "percent": 43,
+          "temperature": 63,
+          "manual_percent": 70,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "error": "",
+          "notice": ""
+        },
+        "pwm1_enable": 1,
+        "pwm1": 109,
+        "watchdog": 45,
+        "rpm": 4830
+      },
+      "last": {
+        "seconds": 118.41,
+        "status": {
+          "available": true,
+          "service": true,
+          "control_enabled": true,
+          "mode": "curve",
+          "rpm": 3865,
+          "percent": 43,
+          "temperature": 63,
+          "manual_percent": 70,
+          "curve": [
+            [
+              40,
+              30
+            ],
+            [
+              55,
+              40
+            ],
+            [
+              65,
+              60
+            ],
+            [
+              75,
+              80
+            ],
+            [
+              85,
+              100
+            ]
+          ],
+          "error": "",
+          "notice": ""
+        },
+        "pwm1_enable": 1,
+        "pwm1": 109,
+        "watchdog": 45,
+        "rpm": 3865
+      }
+    }
+  },
+  "python_tests": 41,
+  "qml_behavior_tests": 9,
+  "limitations": [
+    "simulated sensor read failure with real fan hardware; no physical sensor disconnection",
+    "no deliberate suspend/resume, reboot or thermal stress test"
+  ]
+}

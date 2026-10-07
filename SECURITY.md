@@ -27,6 +27,12 @@ Settings have strict types, ranges and curve ordering; duplicate JSON keys and
 non-finite numbers are rejected. The control loop checks hardware on its own
 schedule, independently of request traffic. A fault latches control off and
 stops repetitive fallback writes so the kernel watchdog can expire.
+Only a temperature-sensor fault can clear automatically, after successful
+firmware Auto recovery and watchdog disarming, followed by three spaced valid
+readings with Auto still confirmed. Observation during that fault makes no
+writes. Recovery clears the old heartbeat and remains in Auto; it cannot
+resume an old Manual/Curve request. Write, watchdog and failed-fallback faults
+remain latched until explicit service restart.
 
 The daemon does not read control state from user-writable files. Its private
 root-owned configuration is checked for ownership, file type, mode, hardlinks,

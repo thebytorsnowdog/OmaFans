@@ -1,5 +1,119 @@
 # Live hardware validation
 
+## Lifecycle and load checks — 0.1.1
+
+On **2026-10-07**, the same T480s ran additional checks against runtime commit
+`d93ef634fc1f87a9854ccfe2b9d8e5e5f1ad9c26`, installed controller SHA-256
+`f721307de59a4562c3e97671585349b45dd8d1d96d4c3046a61c74afa0361b25`.
+The runtime was unchanged. Selected raw observations are in
+[lifecycle-validation.json](lifecycle-validation.json).
+
+| Check | Observed result |
+| --- | --- |
+| Real deep sleep/resume | **Passed the documented recovery behavior.** A 45-second RTC wake alarm produced 43.52 seconds of measured sleep; kernel entry/exit records confirmed deep suspend, with no reboot or daemon restart |
+| Sensor availability after wake | Initially unavailable, then valid but recovering; control became available after **8.27 seconds**, with six healthy samples total from 8.27 through 18.45 seconds |
+| Safe behavior during recovery | Every post-wake sample showed firmware Auto (`pwm1_enable=2`) and watchdog disarmed; the old Curve request did not resume |
+| Fresh request after recovery | A new Curve request was accepted, with manual hardware mode and watchdog 45 seconds; cleanup verified healthy firmware Auto and cleared the RTC alarm |
+| Full CPU load | **Stopped at the test limit**, after about 3 seconds: eight busy workers, approximately 100% sampled CPU use, CPU peak 96°C, control sensor 70°C |
+| Reduced CPU load | **Stopped at the test limit**, after about 13 seconds: eight workers at 40% duty, 51.4% average sampled system CPU use, CPU peak 95°C, control sensor peak 90°C |
+| Reboot | **Passed.** A changed boot was verified; the daemon started active/enabled with the kernel fan-control setting retained, the old controller inactive, and working temperature/fan status in firmware Auto |
+| Controls and source after reboot | The panel opened/closed and fresh Curve/Auto requests passed with hardware read-back. A privileged read verified the unchanged controller SHA-256, root ownership and absence of group/world write permission |
+
+The reboot observer recorded five consecutive healthy daemon, shell-service
+and widget samples from **4.28 through 12.74 seconds after the observer started**.
+These are post-login observation times, not the total boot duration. Its first
+shell-service snapshot was not yet initialized, while the daemon already had
+valid readings; the following samples showed all three available. Firmware
+Auto and watchdog disarming were observed throughout. The observer deliberately
+kept the overall result pending until a separate privileged check verified the
+installed controller's identity. That check and the subsequent panel/control
+checks passed. The temporary startup hook has been removed, and the laptop was
+left in its original post-boot Auto mode.
+
+Both load attempts planned 120 seconds, with independent CPU and controller
+sensor readings and early-stop thresholds of **96°C CPU** and **90°C controller
+sensor**. The CPU reported a critical threshold of 100°C. The test thresholds
+were not changes to OmaFans. The full-load attempt reached the CPU threshold;
+the reduced-duty attempt reached the controller-sensor threshold. All load
+workers stopped, the daemon remained active, and cleanup returned control to
+firmware Auto. Neither attempt completed its intended sustained interval.
+
+During reduced load, hardware PWM rose from 109 to 255 and fan readings rose
+from roughly 3,851 to 5,181 RPM. Temperature and control remained available with
+no reported error in all load samples. These observations establish a response
+to rising temperature, **not adequate cooling under sustained load**. The full
+load's 96°C CPU versus 70°C control input also shows why the displayed input and
+92°C override must not be treated as a hottest-CPU-core safeguard.
+
+The initial suspend harness incorrectly required every post-wake sample to be
+healthy immediately, so that assertion failed. The unchanged raw samples were
+then checked against the documented sensor-recovery behavior: firmware Auto
+throughout the gap, recovery within the 20-second observation window, continued
+healthy readings and no automatic restoration of old Curve intent. Kernel
+records, daemon continuity, installed-source identity and a fresh Curve command
+were checked separately. This was **one actual suspend**, not a second trial
+or physical sensor disconnection. Temporary unavailability after waking remains
+visible until the sensor readings stabilize.
+
+The evidence came from bounded Python CPU workers and one-second load samples,
+`rtcwake -m no -s 45` followed by `systemctl suspend`, BOOTTIME versus monotonic
+clock measurements, kernel journal entry/exit records, daemon/socket status,
+and direct sysfs read-back. The load harnesses exited 1 after their temperature
+stops. The original immediate-availability suspend assertion exited 1; the
+documented-contract evaluation and remaining live control checks exited 0.
+Private logs and full observations are retained locally; the public JSON omits
+account details, absolute personal paths, process/boot identifiers and full logs.
+
+**Outstanding:** sustained thermal stress, repeated sleep/reboot cycles,
+physical fan/sensor fault injection, secondary fans and other laptop models.
+The system was left in verified firmware Auto after these checks.
+
+## Sensor recovery fix — 0.1.1
+
+A later live report showed a valid temperature (63–69°C) while control remained
+disabled with `Temperature sensor unavailable`. Version 0.1.0 had permanently
+latched a previous failed read. Firmware Auto was active, but control never
+became available again. The old daemon did not log the triggering read failure,
+so its exact low-level cause is not established.
+
+The installed fix is runtime commit
+[`d93ef634fc1f87a9854ccfe2b9d8e5e5f1ad9c26`](https://github.com/thebytorsnowdog/OmaFans/commit/d93ef634fc1f87a9854ccfe2b9d8e5e5f1ad9c26),
+controller SHA-256
+`f721307de59a4562c3e97671585349b45dd8d1d96d4c3046a61c74afa0361b25`.
+It clears only a sensor fault after verified firmware Auto, successful watchdog
+disarming and three spaced valid readings. Old Manual/Curve intent is cleared;
+write/watchdog faults and unsuccessful or manual fallback remain latched.
+
+Validation on the same T480s included:
+
+- **41 Python tests**, including reproducing the stuck-fault behavior before
+  the fix, sample timing, interrupted recovery, startup sensor gaps, no old
+  request resumption, and no watchdog writes after failed rescue.
+- **Nine QML behavior tests**, including removal of the stale error and
+  re-enabling controls when a recovered status arrives.
+- A privileged harness using the **installed controller and real fan interface**,
+  while the system daemon was stopped to avoid competing controllers. The
+  harness simulated one unavailable temperature reading, confirmed immediate
+  firmware Auto with watchdog disabled, then used actual sensor readings.
+  Control recovered after **6.16 seconds** with **zero recovery writes**. A fresh
+  Curve request was accepted. This was a simulated read failure, not physical
+  sensor disconnection or a suspend/resume test.
+- The installed system service then started under its normal sandbox. Manual
+  100%, Manual 70%, Auto and Curve commands passed through the live widget,
+  with hardware PWM and watchdog read-back. Panel status showed temperature and
+  control available with no error.
+- A further **two-minute** live observation kept Curve active with valid
+  temperature readings, available control and no reported errors throughout.
+
+Selected results are in [sensor-recovery-validation.json](sensor-recovery-validation.json).
+The earlier measurements below apply to the initial runtime commit, and are
+kept as historical evidence rather than being attributed to the new source.
+The later lifecycle and load checks above supersede the untested sleep/load/
+reboot status of this earlier run. One real sleep/resume and one reboot passed;
+sustained thermal stress has not passed.
+
+## Initial installation — 0.1.0
+
 On **2026-10-07**, OmaFans replaced the previous fan controller and bar widget
 on a **ThinkPad T480s**. The system service and new widget were left running in
 Curve mode. This is a measured check on one laptop, not hardware certification
@@ -7,7 +121,7 @@ or a claim of compatibility with every ThinkPad.
 
 ## Tested source and environment
 
-- Runtime commit: [`f3f2847379456018c48d487681f4e4abebc6345d`](https://github.com/thebytorsnowdog/omafans/commit/f3f2847379456018c48d487681f4e4abebc6345d).
+- Runtime commit: [`f3f2847379456018c48d487681f4e4abebc6345d`](https://github.com/thebytorsnowdog/OmaFans/commit/f3f2847379456018c48d487681f4e4abebc6345d).
 - Controller SHA-256: `dffaa570b75efb01570402dc9f7a295278181a72a49500b2ef3c6aed44635dae`.
   The privileged harness verified that the installed root-owned controller
   matched the checkout. The installed widget's controller copy also matched.
@@ -90,7 +204,7 @@ omarchy-shell community.omafans.service status
 omarchy-shell community.omafans status
 ```
 
-No reboot, suspend/resume, thermal stress, physical fan/sensor fault injection,
+At this initial 0.1.0 checkpoint, no reboot, suspend/resume, thermal stress, physical fan/sensor fault injection,
 secondary-fan validation or other laptop model was tested. The 92°C override
 was tested with fixtures, not by overheating the laptop. Enabled-at-boot is
 configuration evidence only. A daemon restart intentionally returns to Auto;

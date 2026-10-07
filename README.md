@@ -1,6 +1,6 @@
 # OmaFans
 
-[![Checks](https://github.com/thebytorsnowdog/omafans/actions/workflows/checks.yml/badge.svg)](https://github.com/thebytorsnowdog/omafans/actions/workflows/checks.yml)
+[![Checks](https://github.com/thebytorsnowdog/OmaFans/actions/workflows/checks.yml/badge.svg)](https://github.com/thebytorsnowdog/OmaFans/actions/workflows/checks.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 ThinkPad fan monitoring and control for the Omarchy 4 Quattro bar.
@@ -18,7 +18,16 @@ maintained community plugin, unaffiliated with Omarchy or Lenovo. It is not a
 universal laptop fan controller. The daemon and widget are running on a
 ThinkPad T480s, with real fan writes, heartbeat expiry, kernel watchdog firing
 and service stop/restart checked. See the [measured hardware results](docs/hardware-validation.md).
-Thermal stress, suspend/resume, reboot and other models remain untested.
+One deep sleep/resume check passed: after a temporary sensor gap, control became
+available 8.27 seconds after waking, while firmware Auto remained active throughout.
+A real reboot also passed: the service and widget started with working sensors
+and control in firmware Auto; fresh Curve and Auto requests worked afterward.
+Other models remain untested.
+**Sustained thermal stress has not passed:** full and reduced CPU-load attempts
+stopped at preset temperature limits. Fan response and sensor availability were
+observed, but these short runs do not establish adequate cooling under sustained
+load. The displayed ThinkPad sensor can lag the hottest CPU reading; the 92°C
+override monitors that ThinkPad input, not every CPU core.
 Start with monitoring, review the code, and assess your hardware before enabling
 control. See [verification scope](docs/SECURITY_REVIEW.md).
 
@@ -41,14 +50,19 @@ control. See [verification scope](docs/SECURITY_REVIEW.md).
 > the firmware's fan regulation (see [SECURITY.md](SECURITY.md)). Level 7 may
 > therefore be slower than the fan's absolute maximum.
 >
-> **Not tested on hardware:** suspend/resume, reboot, thermal stress (including
-> a live 92°C event) and any model other than the T480s.
+> **Hardware testing so far (ThinkPad T480s only):** one real suspend/resume
+> cycle and one real reboot passed. **Sustained thermal stress has NOT passed**:
+> CPU-load attempts stopped at preset temperature limits. Other models are untested.
+>
+> **The 92°C override is not a CPU temperature limit.** It reads only the
+> ThinkPad `temp1_input` sensor, which can lag the CPU: in testing the CPU
+> reached 96°C while that sensor read 70°C.
 
 ## Quick start
 
 ```bash
 # 1. Monitoring only (no root, no kernel changes)
-omarchy plugin add https://github.com/thebytorsnowdog/omafans.git
+omarchy plugin add https://github.com/thebytorsnowdog/OmaFans.git
 omarchy plugin enable community.omafans --section right
 
 # 2. Optional fan control: preview, install, then reboot
@@ -86,7 +100,7 @@ online accounts, telemetry, HTTP listeners or runtime downloads.
 Review this repository, then add it using Omarchy:
 
 ```bash
-omarchy plugin add https://github.com/thebytorsnowdog/omafans.git
+omarchy plugin add https://github.com/thebytorsnowdog/OmaFans.git
 omarchy plugin enable community.omafans --section right
 ```
 
@@ -154,8 +168,13 @@ already-selected highest normal level 7 rather than switching it to Auto.
 Invalid sensor data or a failed watchdog/write/read-back latches a fault and
 attempts firmware Auto, with highest normal speed as a fallback. After that
 attempt it stops making repeated writes so it cannot indefinitely postpone the
-watchdog. Diagnose a fault before explicitly restarting the service. There is
-no automatic daemon restart loop.
+watchdog. A temporary temperature-sensor failure can recover only if firmware
+Auto was verified and watchdog disarming succeeded: three valid readings below
+92°C, at least two seconds apart with no gap over four seconds, must confirm
+Auto remains active. Control then becomes available in **Auto**; choose Manual
+or Curve again to resume it. Recovery makes no hardware writes. Other faults,
+including failed recovery or a highest-speed fallback, require diagnosis and
+an explicit service restart. There is no automatic daemon restart loop.
 
 At `temp1_input >= 92°C`, the daemon requests the highest **normal** fan level
 (255/level 7), even without a current heartbeat. This is not the driver's
