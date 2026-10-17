@@ -45,8 +45,11 @@ directories, atomic replacement, and fixed `systemctl` argument arrays.
 - The authorized desktop account can intentionally control its own fan. This
   is not a defense against a malicious authorized user or root.
 - Linux/firmware watchdog behavior and cooling vary by ThinkPad model. A sensor
-  value does not prove adequate cooling, and only the first ThinkPad thermal
-  input drives the override. Other controllers must not run concurrently.
+  value does not prove adequate cooling. The 92°C override uses ThinkPad
+  `temp1_input` and, when present, `coretemp` or `k10temp` readings. The curve
+  still follows `temp1_input` only. Other controllers must not run concurrently.
+- The unprivileged client is started with Python isolated mode (`-I`). A local
+  socket whose peer is not root is refused before any request bytes are sent.
 - A local authorized client can consume bounded IPC work. The Unix accept
   queue and request deadline limit individual requests; this is not a general
   resource-isolation or availability guarantee.
@@ -58,9 +61,10 @@ directories, atomic replacement, and fixed `systemctl` argument arrays.
 
 ## Static-analysis exceptions
 
-Bandit has two narrow, reviewed annotations: `B404` for importing subprocess
+Bandit has three narrow, reviewed annotations: `B404` for importing subprocess
 in the explicit installer, `B603` for its fixed `/usr/bin/systemctl` argument
-arrays. These are deliberate
+arrays, and `B606` for `fanctl.py` re-executing the adjacent `omafans.py`
+under `python3 -I`. These are deliberate
 capabilities with the boundaries described above. They are not blanket rule
 exclusions; other instances remain checked. Omarchy's advisory scanner also
 reports process execution, output collection, installation and service

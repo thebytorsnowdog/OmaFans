@@ -54,10 +54,42 @@ TestCase {
     service.applyStatus("{}", 1)
     compare(service.error, "OmaFans request failed")
   }
-  function test_polling_and_setting_cannot_overlap() {
+  function test_polling_keeps_a_control_request_until_the_helper_finishes() {
     service.refresh()
     compare(service.busy, true)
-    compare(service.setControl({ mode: "manual" }), false)
+    compare(service.activeVerb, "heartbeat")
+    compare(service.setControl({ mode: "manual", manual_percent: 40 }), true)
+    compare(service.controlPending, true)
+    compare(service.activeVerb, "heartbeat")
+  }
+  function test_queued_control_starts_after_the_helper_exits() {
+    service.refresh()
+    service.setControl({ mode: "auto" })
+    compare(service.controlPending, true)
+    service.completeHelper(JSON.stringify({ available: true, service: true, mode: "auto" }), 0)
+    compare(service.activeVerb, "set")
+    compare(service.busy, true)
+    compare(service.controlPending, false)
+  }
+  function test_timeout_drops_a_queued_control() {
+    service.refresh()
+    service.setControl({ mode: "manual", manual_percent: 50 })
+    service.timedOut = true
+    service.completeHelper("{}", 1)
+    compare(service.controlPending, false)
+    compare(service.activeVerb, "heartbeat")
+    wait(50)
+    compare(service.activeVerb, "heartbeat")
+  }
+  function test_helper_uses_isolated_interpreter() {
+    compare(service.pythonCommand[1], "-I")
+    verify(String(service.pythonCommand[2]).indexOf("omafans.py") > 0)
+  }
+  function test_cpu_temperature_is_kept_when_numeric() {
+    service.applyStatus(JSON.stringify({ available: true, service: true,
+      temperature: 54, cpu_temperature: 71 }), 0)
+    compare(service.temperature, 54)
+    compare(service.cpuTemperature, 71)
   }
   function test_timeout_does_not_accept_late_success() {
     service.timedOut = true

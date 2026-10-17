@@ -51,6 +51,7 @@ def atomic_write(path, data, mode):
     safe_directory(path.parent)
     safe_destination(path)
     fd, temporary = tempfile.mkstemp(prefix=".omafans-", dir=path.parent)
+    temporary_path = Path(temporary)
     try:
         with os.fdopen(fd, "wb") as stream:
             os.fchmod(stream.fileno(), mode)
@@ -58,8 +59,15 @@ def atomic_write(path, data, mode):
             stream.flush()
             os.fsync(stream.fileno())
         os.replace(temporary, path)
+        temporary_path = None
+        directory = os.open(path.parent, os.O_RDONLY | os.O_DIRECTORY)
+        try:
+            os.fsync(directory)
+        finally:
+            os.close(directory)
     finally:
-        Path(temporary).unlink(missing_ok=True)
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
 
 
 def install(user, enable_kernel, dry_run):

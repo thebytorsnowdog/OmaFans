@@ -1,7 +1,11 @@
 import copy
+import json
 import os
+import shutil
 import socket
 import stat
+import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -18,6 +22,7 @@ class Hardware:
     def __init__(self):
         self.values = {"pwm1_enable": 2, "pwm1": 255, "fan1_input": 2400}
         self.temp = 45000
+        self.cpu = None
         self.ready = True
         self.events = []
         self.failed = set()
@@ -27,6 +32,9 @@ class Hardware:
 
     def temperature(self):
         return self.temp
+
+    def cpu_temperature(self):
+        return self.cpu
 
     def read(self, name):
         return self.values.get(name)
@@ -180,6 +188,26 @@ class ControllerTests(unittest.TestCase):
         self.assertEqual(self.hardware.events, events)
         self.assertFalse(self.control.status()["control_enabled"])
 
+    def test_hot_cpu_overrides_a_cooler_thinkpad_sensor(self):
+        self.set_manual(30)
+        self.hardware.temp = 70000
+        self.hardware.cpu = 96000
+        self.control.tick()
+        self.assertEqual(self.hardware.values["pwm1"], 255)
+        self.assertEqual(self.hardware.values["pwm1_enable"], 1)
+        self.assertEqual(self.control.state["mode"], "auto")
+        self.assertIn("CPU", self.control.error)
+        self.assertEqual(self.control.status()["cpu_temperature"], 96)
+
+    def test_implausible_cpu_reading_does_not_force_full_speed(self):
+        self.set_manual(30)
+        self.hardware.temp = 70000
+        self.hardware.cpu = 200000
+        self.control.tick()
+        self.assertEqual(self.hardware.values["pwm1"], 109)
+        self.assertEqual(self.control.state["mode"], "manual")
+        self.assertIsNone(self.control.status()["cpu_temperature"])
+
     def test_overheat_overrides_expired_client_and_clears_request(self):
         self.set_manual()
         self.now += 60
@@ -297,6 +325,33 @@ class ProtocolTests(unittest.TestCase):
         listener.listen.assert_called_once_with(4)
         self.assertEqual(hw.values["pwm1_enable"], 2)
 
+    def test_idle_wait_follows_the_poll_interval(self):
+        seen = []
+
+        def capture(reads, writes, errors, timeout):
+            seen.append((len(reads), timeout))
+            raise RuntimeError("test loop reached")
+
+        hw = Hardware()
+        runtime = MagicMock()
+        runtime.lstat.return_value = os.stat_result((stat.S_IFDIR | 0o755, 0, 0, 1, 0, 0, 0, 0, 0, 0))
+        listener = MagicMock()
+        with patch.object(app.os, "geteuid", return_value=0), \
+             patch.object(app, "read_config", return_value={"uid": 1000, "gid": 1000}), \
+             patch.object(app, "Hardware", return_value=hw), \
+             patch.object(app, "Path") as path, \
+             patch.object(app.socket, "socket") as factory, \
+             patch.object(app.os, "chmod"), patch.object(app.os, "chown"), \
+             patch.object(app.signal, "signal"), \
+             patch.object(app.select, "select", side_effect=capture):
+            path.return_value.parent = runtime
+            factory.return_value.__enter__.return_value = listener
+            with self.assertRaisesRegex(RuntimeError, "test loop reached"):
+                app.serve()
+        self.assertEqual(seen[0][0], 2)
+        self.assertGreater(seen[0][1], 1.0)
+        self.assertLessEqual(seen[0][1], app.POLL_SECONDS)
+
     def test_json_rejects_duplicates_nonfinite_nested_nonobjects_and_large_data(self):
         for raw in [b'{"command":"status","command":"set"}', b'{"x":NaN}', b'{"x":1e999}', b'[]', b'null', b'\xff', b'{"x":' + b'[' * 2000 + b'0' + b']' * 2000 + b'}', b'x' * 4097]:
             with self.subTest(raw=raw[:30]), self.assertRaises(ValueError):
@@ -381,6 +436,164 @@ class ProtocolTests(unittest.TestCase):
             insecure = os.stat_result((stat.S_IFREG | 0o644, actual.st_ino, actual.st_dev, 1, 0, 0, actual.st_size, 0, 0, 0))
             with patch.object(app.os, "fstat", return_value=insecure), self.assertRaises(ValueError):
                 app.read_config(path)
+
+    def test_config_rejects_oversized_file(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "config"
+            path.write_text('{"uid":1000,"gid":1000}\n')
+            actual = path.stat()
+            huge = os.stat_result((stat.S_IFREG | 0o600, actual.st_ino, actual.st_dev, 1, 0, 0, app.MAX_MESSAGE + 1, 0, 0, 0))
+            with patch.object(app.os, "fstat", return_value=huge), self.assertRaisesRegex(ValueError, "too large"):
+                app.read_config(path)
+
+    def test_invalid_curve_reports_the_validation_error(self):
+        with patch("builtins.print") as printed:
+            code = app.client_main(["set", '{"mode":"curve","curve":[[40,30]]}'])
+        self.assertEqual(code, 1)
+        message = printed.call_args[0][0]
+        self.assertIn("Curve", message)
+        self.assertNotIn("/", message)
+
+    def test_untrusted_socket_is_a_hard_failure(self):
+        with patch.object(app, "client_request", side_effect=ValueError("Daemon is not root-owned")), patch("builtins.print") as printed:
+            self.assertEqual(app.client_main(["status"]), 1)
+        self.assertIn("untrusted", printed.call_args[0][0])
+
+    def test_untrusted_peer_receives_no_request_bytes(self):
+        if os.geteuid() == 0:
+            self.skipTest("a root peer is the trusted daemon identity")
+        with tempfile.TemporaryDirectory() as directory:
+            path = str(Path(directory) / "sock")
+            server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            server.bind(path)
+            server.listen(1)
+            received = []
+
+            def accept():
+                connection, _ = server.accept()
+                connection.settimeout(0.5)
+                try:
+                    received.append(connection.recv(100))
+                except OSError:
+                    received.append(b"unread")
+                connection.close()
+
+            worker = threading.Thread(target=accept)
+            worker.start()
+            with self.assertRaisesRegex(ValueError, "not root-owned"):
+                app.client_request({"command": "set", "settings": {"mode": "manual"}}, path)
+            worker.join(1)
+            server.close()
+        self.assertFalse(worker.is_alive())
+        self.assertEqual(received, [b""])
+
+    def test_isolated_client_entry_prints_status(self):
+        result = subprocess.run(
+            [sys.executable, "-I", str(Path(app.__file__).resolve()), "status"],
+            check=False, capture_output=True, text=True, timeout=5,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        parsed = json.loads(result.stdout)
+        self.assertIn("cpu_temperature", parsed)
+        self.assertFalse(parsed["service"])
+
+    def test_cli_wrapper_reexecs_isolated_status(self):
+        result = subprocess.run(
+            [sys.executable, str(Path(app.__file__).resolve().parent / "fanctl.py"), "status"],
+            check=False, capture_output=True, text=True, timeout=5,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("cpu_temperature", json.loads(result.stdout))
+
+
+def write_hwmon(root, class_name, device, name, temps):
+    device.mkdir(parents=True, exist_ok=True)
+    (device / "name").write_text(name + "\n")
+    for leaf, value in temps.items():
+        target = device / leaf
+        if isinstance(value, Path):
+            target.symlink_to(value)
+        else:
+            target.write_text(str(value) + "\n")
+    link_dir = root / "class/hwmon"
+    link_dir.mkdir(parents=True, exist_ok=True)
+    link = link_dir / class_name
+    if link.exists() or link.is_symlink():
+        link.unlink()
+    link.symlink_to(device)
+
+
+class SysfsHardwareTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_reads_thinkpad_temp_and_hottest_cpu_sensor_only(self):
+        write_hwmon(self.root, "hwmon0", self.root / "devices/platform/thinkpad_hwmon/hwmon/hwmon0", "thinkpad", {"temp1_input": 45000})
+        write_hwmon(self.root, "hwmon1", self.root / "devices/platform/coretemp.0/hwmon/hwmon1", "coretemp", {"temp1_input": 70000, "temp2_input": 96000})
+        write_hwmon(self.root, "hwmon2", self.root / "devices/pci0000:00/nvme/hwmon/hwmon2", "nvme", {"temp1_input": 120000})
+        hardware = app.Hardware(self.root)
+        self.assertEqual(hardware.temperature(), 45000)
+        self.assertEqual(hardware.cpu_temperature(), 96000)
+        self.assertTrue(str(hardware.root).endswith("thinkpad_hwmon/hwmon/hwmon0"))
+
+    def test_ignores_a_thinkpad_name_outside_the_platform_device(self):
+        write_hwmon(self.root, "hwmon0", self.root / "devices/virtual/hwmon/hwmon0", "thinkpad", {"temp1_input": 45000})
+        hardware = app.Hardware(self.root)
+        self.assertFalse(hardware.available)
+        self.assertIsNone(hardware.temperature())
+
+    def test_implausible_and_symlink_cpu_inputs_are_ignored(self):
+        secret = self.root / "secret"
+        secret.write_text("99000\n")
+        cpu = self.root / "devices/platform/coretemp.0/hwmon/hwmon1"
+        write_hwmon(self.root, "hwmon1", cpu, "coretemp", {"temp1_input": 200000, "temp2_input": secret, "temp3_input": 64000})
+        hardware = app.Hardware(self.root)
+        self.assertEqual(hardware.cpu_temperature(), 64000)
+
+    def test_k10temp_is_a_trusted_cpu_sensor(self):
+        write_hwmon(self.root, "hwmon1", self.root / "devices/pci0000:00/k10temp/hwmon/hwmon1", "k10temp", {"temp1_input": 88000})
+        self.assertEqual(app.Hardware(self.root).cpu_temperature(), 88000)
+
+    def test_cpu_sensor_rebinds_with_the_thinkpad_device(self):
+        write_hwmon(self.root, "hwmon0", self.root / "devices/platform/thinkpad_hwmon/hwmon/hwmon0", "thinkpad", {"temp1_input": 40000})
+        hardware = app.Hardware(self.root)
+        self.assertIsNone(hardware.cpu_temperature())
+        write_hwmon(self.root, "hwmon1", self.root / "devices/platform/coretemp.0/hwmon/hwmon1", "coretemp", {"temp1_input": 91000})
+        self.assertIsNone(hardware.cpu_temperature())
+        shutil.rmtree(self.root / "devices")
+        shutil.rmtree(self.root / "class")
+        write_hwmon(self.root, "hwmon3", self.root / "devices/platform/thinkpad_hwmon/hwmon/hwmon3", "thinkpad", {"temp1_input": 42000})
+        write_hwmon(self.root, "hwmon4", self.root / "devices/platform/coretemp.0/hwmon/hwmon4", "coretemp", {"temp1_input": 93000})
+        self.assertEqual(hardware.temperature(), 42000)
+        self.assertEqual(hardware.cpu_temperature(), 93000)
+
+    def test_rebinds_when_the_hwmon_node_disappears(self):
+        write_hwmon(self.root, "hwmon0", self.root / "devices/platform/thinkpad_hwmon/hwmon/hwmon0", "thinkpad", {"temp1_input": 40000})
+        hardware = app.Hardware(self.root)
+        self.assertEqual(hardware.temperature(), 40000)
+        shutil.rmtree(self.root / "devices")
+        shutil.rmtree(self.root / "class")
+        write_hwmon(self.root, "hwmon3", self.root / "devices/platform/thinkpad_hwmon/hwmon/hwmon3", "thinkpad", {"temp1_input": 51000})
+        self.assertEqual(hardware.temperature(), 51000)
+
+    def test_control_and_watchdog_stay_inside_the_supplied_sysfs(self):
+        write_hwmon(self.root, "hwmon0", self.root / "devices/platform/thinkpad_hwmon/hwmon/hwmon0", "thinkpad", {"temp1_input": 45000, "pwm1_enable": 2, "pwm1": 0})
+        param = self.root / "module/thinkpad_acpi/parameters/fan_control"
+        param.parent.mkdir(parents=True)
+        param.write_text("Y\n")
+        hardware = app.Hardware(self.root)
+        self.assertTrue(hardware.control_ready())
+        watchdog = self.root / "bus/platform/drivers/thinkpad_hwmon/fan_watchdog"
+        watchdog.parent.mkdir(parents=True)
+        self.assertTrue(hardware.watchdog(45))
+        self.assertEqual(watchdog.read_text(), "45")
+        self.assertTrue(hardware.write("pwm1_enable", 1))
+        self.assertEqual((hardware.root / "pwm1_enable").read_text(), "1")
+        self.assertFalse(hardware.write("fan_watchdog", 0))
 
 
 if __name__ == "__main__":

@@ -42,8 +42,10 @@ During reduced load, hardware PWM rose from 109 to 255 and fan readings rose
 from roughly 3,851 to 5,181 RPM. Temperature and control remained available with
 no reported error in all load samples. These observations establish a response
 to rising temperature, **not adequate cooling under sustained load**. The full
-load's 96°C CPU versus 70°C control input also shows why the displayed input and
-92°C override must not be treated as a hottest-CPU-core safeguard.
+load's 96°C CPU versus 70°C control input was measured on 0.1.1, when the
+92°C override watched only the ThinkPad control input. Version 0.1.2 also
+reads `coretemp` and `k10temp` for that override; these load runs were not
+repeated on that version and still do not prove adequate sustained cooling.
 
 The initial suspend harness incorrectly required every post-wake sample to be
 healthy immediately, so that assertion failed. The unchanged raw samples were

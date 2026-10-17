@@ -10,9 +10,11 @@ To reproduce it on a test desktop:
    no existing `community.omafans` plugin would be replaced.
 2. Copy the root manifest, QML files and Python files into a temporary plugin
    folder named `community.omafans` under the user's Omarchy plugins directory.
-3. In that temporary copy only, replace `fanctl.py` with a script that prints
-   the exact JSON in `demo/status.json`. This helper performs no hardware or
-   network operations. Do not install or start the privileged daemon.
+3. In that temporary copy only, change `Service.qml` so its helper command
+   runs a script that prints the exact JSON in `demo/status.json`. The
+   production service launches `/usr/bin/python3 -I omafans.py`. The fixture
+   performs no hardware or network operations. Do not install or start the
+   privileged daemon.
 4. Rescan, enable `community.omafans`, and verify
    `omarchy-shell community.omafans.service status` returns the fixture values.
 5. Open the popup in an empty workspace and use `grim -g` with the popup's

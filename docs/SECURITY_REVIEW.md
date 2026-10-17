@@ -1,9 +1,27 @@
 # OmaFans security and verification record
 
-Review date: 2026-10-07. Version: **0.1.1**.
+Review date: 2026-10-07, with 0.1.2 source changes on 2026-10-17. Version: **0.1.2**.
 
 This record summarises the threat model, protections and verification for
-the experimental 0.1.1 release. It is not a claim of hardware certification.
+the experimental 0.1.x release. It is not a claim of hardware certification.
+Live hardware evidence below was collected on **0.1.1**. Version 0.1.2 adds
+unit-tested behavior and was not given a new sustained-load or model run.
+
+## Changes in 0.1.2
+
+- The overheat safeguard also reads `coretemp` and `k10temp`. Curves and the
+  ThinkPad temperature display still use `temp1_input`. CPU coverage is fixture
+  evidence, not a new live thermal proof.
+- The daemon sleeps until the next two-second tick or a connection. A signal
+  wakeup pipe keeps shutdown prompt without a 250 ms idle poll.
+- If the ThinkPad hwmon node disappears, the daemon binds the platform device
+  again instead of keeping a stale path.
+- The widget client runs under `python3 -I`. A non-root peer on the control
+  socket is refused before a request is written.
+- A control click that arrives while a refresh is running is queued once.
+- Install replacement fsyncs the destination directory. Oversized controller
+  configuration is rejected. The service unit adds `PrivateNetwork=yes` and
+  `ProtectProc=invisible`.
 
 ## Threat model
 
@@ -94,11 +112,12 @@ marketplace approval or a guarantee of adequate cooling.
   [lifecycle and load evidence](hardware-validation.md#lifecycle-and-load-checks--011).
   The 92°C safeguard has fixture evidence only. Watchdog firing was tested at level 7; a live
   transition from a lower level to firmware Auto was not tested.
-- Only the first ThinkPad thermal input controls the 92°C override. Sensor
-  mapping, other components, RPM accuracy, cooling effectiveness and secondary
-  fans are not validated. During the full-load attempt, the hottest CPU reading
-  reached 96°C while the control input read 70°C. The override is not a
-  CPU-core temperature limit or proof of adequate sustained cooling.
+- On 0.1.1, only the first ThinkPad thermal input controlled the 92°C override.
+  During that full-load attempt, the hottest CPU reading reached 96°C while the
+  control input read 70°C. 0.1.2 also reads `coretemp` and `k10temp` for the
+  override, with fixture tests only. Sensor mapping, other components, RPM
+  accuracy, cooling effectiveness and secondary fans are not validated. The
+  override is not proof of adequate sustained cooling.
 - The UI was exercised on one horizontal-bar display, including a new desktop
   session after reboot. Vertical placement, multiple monitors and restarting
   the shell without reboot remain unverified.
