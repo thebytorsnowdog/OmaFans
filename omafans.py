@@ -151,40 +151,114 @@ def read_number(path):
         return None
 
 
-class Hardware:
-    """Only the modern thinkpad_hwmon device is allowed to receive writes."""
+def plausible_temperature(value):
+    return type(value) is int and 0 <= value <= 125000
 
-    def __init__(self):
+
+class Hardware:
+    """Only the modern thinkpad_hwmon device is allowed to receive writes.
+
+    CPU package and core sensors are read-only inputs for the overheat
+    safeguard. Temperature curves continue to use ThinkPad temp1_input.
+    """
+
+    CPU_NAMES = {"coretemp", "k10temp"}
+
+    def __init__(self, sysfs="/sys"):
+        self.sysfs = Path(sysfs)
         self.root = None
-        for name in sorted(glob.glob("/sys/class/hwmon/hwmon*/name")):
+        self.cpu_inputs = []
+        self._bind_thinkpad()
+        self._bind_cpu()
+
+    def _under_sysfs(self, absolute):
+        return self.sysfs / Path(absolute).relative_to("/sys")
+
+    def _hwmon_devices(self):
+        found = []
+        pattern = str(self.sysfs / "class/hwmon/hwmon*/name")
+        for name in sorted(glob.glob(pattern)):
             try:
-                path = Path(name).parent.resolve(strict=True)
-                if (path.is_relative_to("/sys/devices/platform/thinkpad_hwmon/hwmon")
-                        and Path(name).read_text(encoding="ascii").strip() == "thinkpad"):
-                    self.root = path
-                    break
-            except (OSError, UnicodeError):
+                device = Path(name).parent.resolve(strict=True)
+                if not device.is_relative_to(self.sysfs / "devices"):
+                    continue
+                label = Path(name).read_text(encoding="ascii").strip()
+                found.append((label, device))
+            except (OSError, UnicodeError, ValueError):
                 continue
+        return found
+
+    def _bind_thinkpad(self):
+        self.root = None
+        prefix = self.sysfs / "devices/platform/thinkpad_hwmon/hwmon"
+        for label, device in self._hwmon_devices():
+            try:
+                if label == "thinkpad" and device.is_relative_to(prefix):
+                    self.root = device
+                    return
+            except (OSError, ValueError):
+                continue
+
+    def _bind_cpu(self):
+        inputs = []
+        for label, device in self._hwmon_devices():
+            if label not in self.CPU_NAMES or len(inputs) >= 16:
+                continue
+            for path in sorted(device.glob("temp*_input")):
+                if len(inputs) >= 16:
+                    break
+                try:
+                    if path.is_symlink() or path.parent.resolve(strict=True) != device:
+                        continue
+                    if path.is_file():
+                        inputs.append(path)
+                except OSError:
+                    continue
+        self.cpu_inputs = inputs
+
+    def _ensure_thinkpad(self):
+        # hwmon numbers can change across resume; follow the platform device.
+        if self.root is None or not self.root.exists():
+            self._bind_thinkpad()
+            self._bind_cpu()
+
+    def _ensure_cpu(self):
+        if self.cpu_inputs and any(not path.exists() for path in self.cpu_inputs):
+            self._bind_cpu()
 
     @property
     def available(self):
+        self._ensure_thinkpad()
         return self.root is not None
 
     def control_ready(self):
         try:
-            return self.available and Path(FAN_CONTROL_PARAM).read_text().strip().lower() in ("1", "y")
-        except OSError:
+            enabled = self._under_sysfs(FAN_CONTROL_PARAM).read_text(encoding="ascii").strip().lower()
+            return self.available and enabled in ("1", "y")
+        except (OSError, UnicodeError):
             return False
 
     def read(self, name):
+        self._ensure_thinkpad()
         return read_number(self.root / name) if self.root else None
 
     def temperature(self):
         # temp1 is required. Disconnected or implausible readings fail closed.
         value = self.read("temp1_input")
-        return value if value is not None and 0 <= value <= 125000 else None
+        return value if plausible_temperature(value) else None
+
+    def cpu_temperature(self):
+        """Hottest current coretemp/k10temp reading, in millidegrees."""
+        self._ensure_cpu()
+        valid = []
+        for path in self.cpu_inputs:
+            value = read_number(path)
+            if plausible_temperature(value):
+                valid.append(value)
+        return max(valid) if valid else None
 
     def write(self, name, value):
+        self._ensure_thinkpad()
         if not self.root or name not in ("pwm1", "pwm1_enable"):
             return False
         return self._write(self.root / name, value)
@@ -199,7 +273,7 @@ class Hardware:
             return False
 
     def watchdog(self, seconds):
-        return self._write(WATCHDOG_PATH, seconds)
+        return self._write(self._under_sysfs(WATCHDOG_PATH), seconds)
 
 
 class Controller:
@@ -297,13 +371,20 @@ class Controller:
         if not hw.control_ready():
             return self.fail("Kernel fan control is unavailable")
         temperature = hw.temperature()
+        cpu = hw.cpu_temperature()
+        if not plausible_temperature(cpu):
+            cpu = None
         age = None if self.last_heartbeat is None else self.clock() - self.last_heartbeat
         if temperature is None:
             return self.fail("Temperature sensor unavailable", sensor=True)
-        if temperature >= OVERHEAT_MC:
+        # temp1 can lag the package. A hot CPU still forces the highest normal level.
+        if temperature >= OVERHEAT_MC or (cpu is not None and cpu >= OVERHEAT_MC):
             target = 100
             self.state["mode"] = "auto"
-            self.error = "High temperature: highest normal fan speed requested"
+            if temperature >= OVERHEAT_MC:
+                self.error = "High temperature: highest normal fan speed requested"
+            else:
+                self.error = "High CPU temperature: highest normal fan speed requested"
         elif age is None or not 0 <= age <= HEARTBEAT_TIMEOUT or self.state["mode"] == "auto":
             self.error = ""
             if not self.safe():
@@ -333,11 +414,15 @@ class Controller:
         hw = self.hardware
         pwm, enable = hw.read("pwm1"), hw.read("pwm1_enable")
         temp = hw.temperature()
+        cpu = hw.cpu_temperature()
+        if not plausible_temperature(cpu):
+            cpu = None
         return {**self.state, "available": hw.available, "service": True,
                 "control_enabled": hw.control_ready() and not self.fault,
                 "rpm": hw.read("fan1_input"),
                 "percent": round(pwm * 100 / 255) if pwm is not None and enable == 1 else None,
                 "temperature": temp / 1000 if temp is not None else None,
+                "cpu_temperature": cpu / 1000 if cpu is not None else None,
                 "error": self.error, "notice": self.notice}
 
     def request(self, request):
@@ -368,6 +453,8 @@ def read_config(path=CONFIG_PATH):
         info = os.fstat(fd)
         if not stat.S_ISREG(info.st_mode) or info.st_uid != 0 or info.st_mode & 0o077 or info.st_nlink != 1:
             raise ValueError("Controller configuration must be a private root-owned regular file")
+        if info.st_size > MAX_MESSAGE:
+            raise ValueError("Controller configuration is too large")
         config = decode_message(os.read(fd, MAX_MESSAGE + 1))
     finally:
         os.close(fd)
@@ -394,6 +481,14 @@ def handle_connection(connection, controller, allowed_uid):
             return
 
 
+def drain_wakeup(fd):
+    try:
+        while os.read(fd, 256):
+            pass
+    except (BlockingIOError, InterruptedError):
+        return
+
+
 def serve():
     if os.geteuid() != 0:
         raise ValueError("The daemon must be started by its system service")
@@ -414,7 +509,16 @@ def serve():
         running = False
     signal.signal(signal.SIGTERM, stop)
     signal.signal(signal.SIGINT, stop)
+    wake_read = wake_write = None
+    safe = False
     try:
+        # Sleep until the next control tick or a connection. A signal wakeup
+        # pipe makes SIGTERM return immediately, so stop does not need a
+        # short idle poll.
+        wake_read, wake_write = os.pipe()
+        os.set_blocking(wake_read, False)
+        os.set_blocking(wake_write, False)
+        signal.set_wakeup_fd(wake_write)
         # systemd owns this private, root-writable runtime directory.
         Path(SOCKET_PATH).unlink(missing_ok=True)
         with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as listener:
@@ -433,15 +537,24 @@ def serve():
                 if now >= next_tick:
                     controller.tick()
                     next_tick = time.monotonic() + POLL_SECONDS
-                readable, _, _ = select.select([listener], [], [], min(0.25, max(0, next_tick - time.monotonic())))
-                if readable:
+                timeout = max(0.0, next_tick - time.monotonic())
+                readable, _, _ = select.select([listener, wake_read], [], [], timeout)
+                if wake_read in readable:
+                    drain_wakeup(wake_read)
+                if listener in readable and running:
                     connection, _ = listener.accept()
                     handle_connection(connection, controller, config["uid"])
     finally:
-        safe = controller.safe()
-        Path(SOCKET_PATH).unlink(missing_ok=True)
-        if not safe:
-            print("OmaFans: safety fallback failed during shutdown", file=sys.stderr)
+        try:
+            if wake_write is not None:
+                signal.set_wakeup_fd(-1)
+                os.close(wake_read)
+                os.close(wake_write)
+        finally:
+            safe = controller.safe()
+            Path(SOCKET_PATH).unlink(missing_ok=True)
+            if not safe:
+                print("OmaFans: safety fallback failed during shutdown", file=sys.stderr)
     return 0 if safe else 1
 
 
@@ -469,6 +582,16 @@ def client_request(request, path=SOCKET_PATH):
         return receive_message(connection, CLIENT_TIMEOUT)
 
 
+def client_arguments(command, settings):
+    if command not in ("status", "heartbeat", "set"):
+        raise ValueError("Use status, heartbeat, or set JSON")
+    if command != "set":
+        if settings is not None:
+            raise ValueError("Unexpected settings")
+        return [command]
+    return [command, "{}" if settings is None else settings]
+
+
 def client_main(argv=None):
     args = sys.argv[1:] if argv is None else argv
     command = args[0] if args else "status"
@@ -482,23 +605,38 @@ def client_main(argv=None):
             request["settings"] = payload
         try:
             response = client_request(request)
-        except (OSError, ValueError):
+        except ValueError as exc:
+            if str(exc) == "Daemon is not root-owned":
+                print('{"ok":false,"error":"Refusing an untrusted local socket"}')
+                return 1
+            response = offline_status()
+            response["ok"] = command != "set"
+            if command == "set":
+                response["error"] = "Control unavailable; settings were not applied"
+        except OSError:
             response = offline_status()
             response["ok"] = command != "set"
             if command == "set":
                 response["error"] = "Control unavailable; settings were not applied"
         print(encode_message(response).decode(), end="")
         return 0 if response.get("ok", True) else 1
-    except (ValueError, OSError):
+    except ValueError as exc:
+        detail = " ".join(str(exc).split())[:250] or "Invalid request"
+        print(json.dumps({"ok": False, "error": detail}))
+        return 1
+    except OSError:
         print('{"ok":false,"error":"Invalid request"}')
         return 1
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("serve", "release"))
-    args = parser.parse_args()
+    parser.add_argument("command", choices=("serve", "release", "status", "heartbeat", "set"))
+    parser.add_argument("settings", nargs="?")
+    args = parser.parse_args(sys.argv[1:] if argv is None else argv)
     try:
+        if args.command in ("status", "heartbeat", "set"):
+            return client_main(client_arguments(args.command, args.settings))
         if os.geteuid() != 0:
             raise ValueError("Root privileges required for the system daemon")
         if args.command == "release":

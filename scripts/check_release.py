@@ -28,7 +28,7 @@ def check():
         path = Path(value)
         require(bool(value) and not path.is_absolute() and ".." not in path.parts and (ROOT / path).is_file(), f"Invalid entry point: {key}")
     service = (ROOT / "system/omafans.service").read_text()
-    for expected in ("Restart=no", "ProtectHome=yes", "ProtectSystem=strict", "NoNewPrivileges=yes", "RestrictAddressFamilies=AF_UNIX", "ExecStart=/usr/bin/python3 -I /usr/local/lib/omafans/omafans.py serve"):
+    for expected in ("Restart=no", "ProtectHome=yes", "ProtectSystem=strict", "PrivateNetwork=yes", "ProtectProc=invisible", "NoNewPrivileges=yes", "RestrictAddressFamilies=AF_UNIX", "ExecStart=/usr/bin/python3 -I /usr/local/lib/omafans/omafans.py serve"):
         require(expected in service, f"Missing service safety invariant: {expected}")
     source = ast.parse((ROOT / "omafans.py").read_text())
     allowed = {"argparse", "glob", "json", "math", "os", "pathlib", "select", "signal", "socket", "stat", "struct", "sys", "time"}

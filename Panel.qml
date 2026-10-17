@@ -37,6 +37,8 @@ Panel {
   readonly property var rpm: service ? service.rpm : null
   readonly property var percent: service ? service.percent : null
   readonly property var temperature: service ? service.temperature : null
+  readonly property var cpuTemperature: service ? service.cpuTemperature : null
+  readonly property bool cpuAhead: cpuTemperature !== null && temperature !== null && Number(cpuTemperature) >= Number(temperature) + 8
   readonly property string statusError: service ? service.error : ""
   readonly property string notice: service ? service.notice : ""
   readonly property bool busy: service ? service.busy : false
@@ -245,6 +247,8 @@ Panel {
     var lines = [ "OmaFans · " + mode.toUpperCase() ]
     lines.push(rpmText() + " · " + tempText())
     if (percent !== null && percent !== undefined) lines.push(Math.round(Number(percent)) + "% duty")
+    if (cpuTemperature !== null && cpuTemperature !== undefined)
+      lines.push(Math.round(Number(cpuTemperature)) + "°C CPU")
     if (statusError !== "") lines.push(statusError)
     else if (notice !== "") lines.push(notice)
     return lines.join("\n")
@@ -277,6 +281,7 @@ Panel {
         rpm: root.rpm,
         percent: root.percent,
         temperature: root.temperature,
+        cpu_temperature: root.cpuTemperature,
         manual_percent: root.service ? root.service.manualPercent : 60,
         curve: root.service ? root.service.curve : [],
         error: root.statusError,
@@ -384,7 +389,10 @@ Panel {
                 text: {
                   if (!root.serviceUp) return "HELPER UNAVAILABLE"
                   if (!root.available) return "NO FAN CONTROL"
-                  return root.rpmText() + " · " + root.tempText()
+                  var line = root.rpmText() + " · " + root.tempText()
+                  if (root.cpuTemperature !== null && root.cpuTemperature !== undefined)
+                    line += " · CPU " + Math.round(Number(root.cpuTemperature)) + "°C"
+                  return line
                 }
                 color: Qt.darker(root.bar.foreground, 1.4)
                 font.family: root.bar.fontFamily
@@ -403,6 +411,17 @@ Panel {
             textFormat: Text.PlainText
             text: root.statusError
             color: root.urgent
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.bodySmall
+            wrapMode: Text.WordWrap
+          }
+
+          Text {
+            visible: root.cpuAhead && root.statusError === ""
+            width: parent.width
+            textFormat: Text.PlainText
+            text: "CPU is " + Math.round(Number(root.cpuTemperature)) + "°C, ahead of the ThinkPad sensor"
+            color: root.dim
             font.family: root.fontFamily
             font.pixelSize: Style.font.bodySmall
             wrapMode: Text.WordWrap

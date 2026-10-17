@@ -17,8 +17,13 @@ Item {
   property var curve: [[40, 30], [55, 40], [65, 60], [75, 80], [85, 100]]
   property string error: ""
   property string notice: ""
+  property var cpuTemperature: null
   readonly property bool busy: helper.running
-  readonly property string helperPath: decodeURIComponent(Qt.resolvedUrl("fanctl.py").toString().replace(/^file:\/\//, ""))
+  readonly property string helperPath: decodeURIComponent(Qt.resolvedUrl("omafans.py").toString().replace(/^file:\/\//, ""))
+  readonly property var pythonCommand: ["/usr/bin/python3", "-I", helperPath]
+  property string pendingPayload: ""
+  property string activeVerb: ""
+  readonly property bool controlPending: pendingPayload !== ""
   property bool timedOut: false
 
   function unavailable(message) {
@@ -28,24 +33,57 @@ Item {
     rpm = null
     percent = null
     temperature = null
+    cpuTemperature = null
     error = message
+  }
+
+  function startHelper(args) {
+    timedOut = false
+    activeVerb = args.length > 0 ? args[0] : ""
+    var command = []
+    for (var i = 0; i < pythonCommand.length; i++) command.push(pythonCommand[i])
+    for (var j = 0; j < args.length; j++) command.push(args[j])
+    helper.command = command
+    helper.running = true
   }
 
   function refresh() {
     if (helper.running) return
-    timedOut = false
-    helper.command = ["/usr/bin/python3", helperPath, "heartbeat"]
-    helper.running = true
+    startHelper(["heartbeat"])
+  }
+
+  function startSet(data) {
+    startHelper(["set", data])
+    return true
   }
 
   function setControl(payload) {
-    if (helper.running) return false
     var data = JSON.stringify(payload)
     if (!data || data.length > 2048) return false
-    timedOut = false
-    helper.command = ["/usr/bin/python3", helperPath, "set", data]
-    helper.running = true
-    return true
+    if (helper.running) {
+      pendingPayload = data
+      return true
+    }
+    return startSet(data)
+  }
+
+  function flushQueued(data) {
+    if (timedOut) return
+    if (helper.running) {
+      pendingPayload = data
+      return
+    }
+    startSet(data)
+  }
+
+  function completeHelper(raw, exitCode) {
+    var queued = pendingPayload
+    pendingPayload = ""
+    // onExited runs only after the helper has stopped. A fixture caller may
+    // still report it running, so clear that before the queued command starts.
+    if (helper.running) helper.running = false
+    applyStatus(raw, exitCode)
+    if (queued !== "" && !timedOut) flushQueued(queued)
   }
 
   function applyStatus(raw, exitCode) {
@@ -63,6 +101,7 @@ Item {
     rpm = typeof parsed.rpm === "number" && isFinite(parsed.rpm) ? parsed.rpm : null
     percent = typeof parsed.percent === "number" && isFinite(parsed.percent) ? parsed.percent : null
     temperature = typeof parsed.temperature === "number" && isFinite(parsed.temperature) ? parsed.temperature : null
+    cpuTemperature = typeof parsed.cpu_temperature === "number" && isFinite(parsed.cpu_temperature) ? parsed.cpu_temperature : null
     if (typeof parsed.manual_percent === "number" && isFinite(parsed.manual_percent))
       manualPercent = Math.max(30, Math.min(100, Math.round(parsed.manual_percent)))
     if (Array.isArray(parsed.curve) && parsed.curve.length === 5) curve = parsed.curve
@@ -83,6 +122,7 @@ Item {
     running: helper.running
     onTriggered: {
       root.timedOut = true
+      root.pendingPayload = ""
       helper.signal(9)
       root.unavailable("OmaFans helper timed out")
     }
@@ -90,7 +130,7 @@ Item {
   Process {
     id: helper
     stdout: StdioCollector { id: output; waitForEnd: true }
-    onExited: function(exitCode) { root.applyStatus(output.text, exitCode) }
+    onExited: function(exitCode) { root.completeHelper(output.text, exitCode) }
   }
   IpcHandler {
     target: "community.omafans.service"
@@ -98,6 +138,7 @@ Item {
       return JSON.stringify({ available: root.available, service: root.serviceUp,
         control_enabled: root.controlEnabled, mode: root.mode, rpm: root.rpm,
         percent: root.percent, temperature: root.temperature,
+        cpu_temperature: root.cpuTemperature,
         manual_percent: root.manualPercent, curve: root.curve,
         error: root.error, notice: root.notice })
     }

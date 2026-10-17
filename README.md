@@ -44,8 +44,10 @@ control. See [verification scope](docs/SECURITY_REVIEW.md).
 > `echo level auto | sudo tee /proc/acpi/ibm/fan`. To disable control completely, run
 > `sudo /usr/bin/python3 -I scripts/setup.py remove` and reboot.
 >
-> **Overheat safeguard limit:** at 92°C (`temp1_input` only), OmaFans requests
-> level 7, the highest *normal* level. It does not use the driver's
+> **Overheat safeguard limit:** at 92°C on ThinkPad `temp1_input` **or** a
+> trusted CPU sensor (`coretemp` / `k10temp`), OmaFans requests level 7, the
+> highest *normal* level. The curve and the temperature shown as the ThinkPad
+> reading still use `temp1_input` only. It does not use the driver's
 > disengaged/full-speed mode, because OmaFans deliberately never bypasses
 > the firmware's fan regulation (see [SECURITY.md](SECURITY.md)). Level 7 may
 > therefore be slower than the fan's absolute maximum.
@@ -54,9 +56,11 @@ control. See [verification scope](docs/SECURITY_REVIEW.md).
 > cycle and one real reboot passed. **Sustained thermal stress has NOT passed**:
 > CPU-load attempts stopped at preset temperature limits. Other models are untested.
 >
-> **The 92°C override is not a CPU temperature limit.** It reads only the
-> ThinkPad `temp1_input` sensor, which can lag the CPU: in testing the CPU
-> reached 96°C while that sensor read 70°C.
+> **The 92°C override is not a guarantee of adequate cooling.** On 0.1.1 it
+> read only ThinkPad `temp1_input`, which lagged the CPU: the CPU reached
+> 96°C while that sensor read 70°C. 0.1.2 also watches `coretemp` and
+> `k10temp`, but that path has fixture coverage only. It still does not
+> prove sustained cooling, secondary fans, or every sensor on the machine.
 
 ## Quick start
 
@@ -85,7 +89,8 @@ Read [Optional fan control](#optional-fan-control) before step 2. To uninstall, 
 
 The runtime uses only Python's standard library, Qt/Quickshell and the Omarchy
 UI already installed on the host. There are no pip runtime dependencies,
-online accounts, telemetry, HTTP listeners or runtime downloads.
+online accounts, telemetry, HTTP listeners or runtime downloads. The widget
+launches the client with `python3 -I`, so user-site packages are not imported.
 
 ## Supported hardware
 
@@ -176,10 +181,11 @@ or Curve again to resume it. Recovery makes no hardware writes. Other faults,
 including failed recovery or a highest-speed fallback, require diagnosis and
 an explicit service restart. There is no automatic daemon restart loop.
 
-At `temp1_input >= 92°C`, the daemon requests the highest **normal** fan level
+At ThinkPad `temp1_input` or a trusted CPU sensor (`coretemp` or `k10temp`)
+of at least 92°C, the daemon requests the highest **normal** fan level
 (255/level 7), even without a current heartbeat. This is not the driver's
-disengaged/full-speed mode. Only `temp1_input` drives this safeguard: other
-components, sensor mappings, fan failure and actual cooling effectiveness
+disengaged/full-speed mode. The curve still follows `temp1_input` only.
+Other components, sensor mappings, fan failure and actual cooling effectiveness
 are not monitored. No software safeguard guarantees adequate cooling.
 
 For read-only diagnostics:
@@ -189,8 +195,9 @@ python3 fanctl.py status
 omarchy-shell community.omafans.service status
 ```
 
-IPC `set` returns `queued` when the helper has started; the following status
-shows whether the daemon actually applied the setting.
+IPC `set` returns `queued` when the helper has accepted the request. A click
+during a status refresh is kept and sent when that refresh finishes, instead
+of being dropped. The following status shows whether the daemon applied it.
 
 ## Update
 
