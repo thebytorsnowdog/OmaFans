@@ -547,10 +547,10 @@ class SysfsHardwareTests(unittest.TestCase):
         self.assertIsNone(hardware.temperature())
 
     def test_implausible_and_symlink_cpu_inputs_are_ignored(self):
-        secret = self.root / "secret"
-        secret.write_text("99000\n")
+        outside = self.root / "outside-reading"
+        outside.write_text("99000\n")
         cpu = self.root / "devices/platform/coretemp.0/hwmon/hwmon1"
-        write_hwmon(self.root, "hwmon1", cpu, "coretemp", {"temp1_input": 200000, "temp2_input": secret, "temp3_input": 64000})
+        write_hwmon(self.root, "hwmon1", cpu, "coretemp", {"temp1_input": 200000, "temp2_input": outside, "temp3_input": 64000})
         hardware = app.Hardware(self.root)
         self.assertEqual(hardware.cpu_temperature(), 64000)
 
