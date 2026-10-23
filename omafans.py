@@ -332,18 +332,22 @@ class Hardware:
         path = self._attr_path(name)
         if not path:
             return False
-        if (
-            name == "pwm1_enable"
-            and value == 2
-            and self.profile
-            and self.profile["name"] == "it87"
-        ):
-            # On ITE Super I/O chips, pwm2 and pwm2_auto_start share register
-            # 0x63. Restore the BIOS auto_start duty before enabling SmartGuardian.
+        if self.profile and self.profile["name"] == "it87":
             pwm_path = self._attr_path("pwm1")
-            auto_start = self.profile.get("auto_start_pwm", 95)
-            if not pwm_path or not self._write(path, 1) or not self._write(pwm_path, auto_start):
-                return False
+            enable_path = self._attr_path("pwm1_enable")
+            if name == "pwm1_enable" and value == 2:
+                # On ITE Super I/O chips, pwm2 and pwm2_auto_start share register
+                # 0x63. Restore the BIOS auto_start duty once when entering
+                # SmartGuardian Auto; do not re-trigger register writes every tick.
+                auto_start = self.profile.get("auto_start_pwm", 95)
+                if read_number(path) == 2 and read_number(pwm_path) == auto_start:
+                    return True
+                if not pwm_path or not self._write(path, 1) or not self._write(pwm_path, auto_start):
+                    return False
+            elif name == "pwm1_enable" and value == 1 and read_number(path) == 1:
+                return True
+            elif name == "pwm1" and read_number(enable_path) == 1 and read_number(path) == value:
+                return True
         return self._write(path, value)
 
     @staticmethod

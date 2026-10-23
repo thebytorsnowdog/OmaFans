@@ -633,6 +633,9 @@ class SysfsHardwareTests(unittest.TestCase):
         self.assertTrue(controller.safe())
         self.assertEqual((hardware.root / "pwm2").read_text(), "95")
         self.assertEqual((hardware.root / "pwm2_enable").read_text(), "2")
+        with patch.object(hardware, "_write") as write_mock:
+            self.assertTrue(controller.safe())
+            write_mock.assert_not_called()
 
 
 if __name__ == "__main__":
