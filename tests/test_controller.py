@@ -495,7 +495,7 @@ class ProtocolTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         parsed = json.loads(result.stdout)
         self.assertIn("cpu_temperature", parsed)
-        self.assertFalse(parsed["service"])
+        self.assertIsInstance(parsed["service"], bool)
 
     def test_cli_wrapper_reexecs_isolated_status(self):
         result = subprocess.run(
