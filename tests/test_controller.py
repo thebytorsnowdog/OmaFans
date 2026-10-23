@@ -625,7 +625,13 @@ class SysfsHardwareTests(unittest.TestCase):
         self.assertEqual(response["percent"], 50)
         self.assertEqual((hardware.root / "pwm2_enable").read_text(), "1")
         self.assertEqual((hardware.root / "pwm2").read_text(), "128")
+        full = controller.request({"command": "set", "settings": {"mode": "manual", "manual_percent": 100}})
+        self.assertTrue(full["ok"])
+        self.assertEqual(full["percent"], 100)
+        self.assertEqual((hardware.root / "pwm2_enable").read_text(), "1")
+        self.assertEqual((hardware.root / "pwm2").read_text(), "254")
         self.assertTrue(controller.safe())
+        self.assertEqual((hardware.root / "pwm2").read_text(), "95")
         self.assertEqual((hardware.root / "pwm2_enable").read_text(), "2")
 
 

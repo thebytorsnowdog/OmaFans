@@ -190,6 +190,7 @@ class Hardware:
             },
             "linear_pwm": True,
             "has_watchdog": False,
+            "auto_start_pwm": 95,
         },
     )
 
@@ -298,7 +299,16 @@ class Hardware:
     def read(self, name):
         self._ensure_thinkpad()
         path = self._attr_path(name)
-        return read_number(path) if path else None
+        value = read_number(path) if path else None
+        if (
+            name == "pwm1_enable"
+            and value == 0
+            and self.profile
+            and self.profile["name"] == "it87"
+            and read_number(self._attr_path("pwm1")) == 255
+        ):
+            return 1
+        return value
 
     def temperature(self):
         # temp1 is required. Disconnected or implausible readings fail closed.
@@ -322,6 +332,18 @@ class Hardware:
         path = self._attr_path(name)
         if not path:
             return False
+        if (
+            name == "pwm1_enable"
+            and value == 2
+            and self.profile
+            and self.profile["name"] == "it87"
+        ):
+            # On ITE Super I/O chips, pwm2 and pwm2_auto_start share register
+            # 0x63. Restore the BIOS auto_start duty before enabling SmartGuardian.
+            pwm_path = self._attr_path("pwm1")
+            auto_start = self.profile.get("auto_start_pwm", 95)
+            if not pwm_path or not self._write(path, 1) or not self._write(pwm_path, auto_start):
+                return False
         return self._write(path, value)
 
     @staticmethod
@@ -467,7 +489,9 @@ class Controller:
         if not hw.watchdog(WATCHDOG_SECONDS):
             return self.fail("Fan watchdog could not be armed")
         if getattr(hw, "linear_pwm", False):
-            pwm = max(77, min(255, round(target * 255 / 100)))
+            # In drivers/hwmon/it87.c, writing 255 makes show_pwm_enable report 0
+            # instead of 1; 254 keeps manual mode (1) while still reporting 100%.
+            pwm = max(77, min(254, round(target * 255 / 100)))
         else:
             level = max(2, min(7, math.ceil(target * 7 / 100)))
             pwm = level * 255 // 7
