@@ -17,8 +17,35 @@ LIB = Path("/usr/local/lib/omafans")
 CONFIG = Path("/etc/omafans")
 UNIT = Path("/etc/systemd/system/omafans.service")
 MODPROBE = Path("/etc/modprobe.d/omafans.conf")
+MODULES_LOAD = Path("/etc/modules-load.d/omafans.conf")
+SYSFS = Path("/sys")
 KERNEL_OPTION = b"# Managed by OmaFans\noptions thinkpad_acpi fan_control=1\n"
+IT87_MODPROBE_OPTION = b"# Managed by OmaFans\noptions it87 force_id=0x8622 ignore_resource_conflict=1\n"
+IT87_MODULES_LOAD = b"# Managed by OmaFans\nit87\n"
+MANAGED_MODPROBE = (KERNEL_OPTION, IT87_MODPROBE_OPTION)
+MANAGED_MODULES_LOAD = (IT87_MODULES_LOAD,)
 CONFLICTS = ("thinkfan", "fancontrol", "nbfc", "nbfc_service", "omarchy-fanctl")
+
+
+def _read_dmi(sysfs, field):
+    try:
+        return (sysfs / "devices/virtual/dmi/id" / field).read_text(encoding="ascii").strip()
+    except (OSError, UnicodeError):
+        return ""
+
+
+def detect_profile(sysfs=None):
+    root = SYSFS if sysfs is None else Path(sysfs)
+    if (root / "devices/platform/thinkpad_hwmon").exists() or (root / "module/thinkpad_acpi").exists():
+        return "thinkpad"
+    if (root / "devices/platform/it87.2608").exists():
+        return "it87"
+    vendor = _read_dmi(root, "sys_vendor").upper()
+    product = _read_dmi(root, "product_name").upper()
+    board = _read_dmi(root, "board_name").upper()
+    if vendor == "AZW" and ("MINI S" in product or "MINI S" in board):
+        return "it87"
+    return "thinkpad"
 
 
 def systemctl(*args, check=True):
@@ -70,17 +97,25 @@ def atomic_write(path, data, mode):
             temporary_path.unlink(missing_ok=True)
 
 
-def install(user, enable_kernel, dry_run):
+def install(user, enable_kernel, dry_run, profile=None):
     account = pwd.getpwnam(user)
     if account.pw_uid == 0 or account.pw_gid == 0:
         raise ValueError("Choose an unprivileged desktop account")
+    selected = detect_profile() if profile in (None, "auto") else profile
+    if selected not in ("thinkpad", "it87"):
+        raise ValueError("Unsupported hardware profile")
     files = {
         LIB / "omafans.py": ((SOURCE / "omafans.py").read_bytes(), 0o644),
         CONFIG / "controller.json": (json.dumps({"uid": account.pw_uid, "gid": account.pw_gid}).encode() + b"\n", 0o600),
         UNIT: ((SOURCE / "system/omafans.service").read_bytes(), 0o644),
     }
     if enable_kernel:
-        files[MODPROBE] = (KERNEL_OPTION, 0o644)
+        if selected == "it87":
+            files[MODPROBE] = (IT87_MODPROBE_OPTION, 0o644)
+            files[MODULES_LOAD] = (IT87_MODULES_LOAD, 0o644)
+        else:
+            files[MODPROBE] = (KERNEL_OPTION, 0o644)
+    print(f"Detected hardware profile: {selected}")
     for path in files:
         print(f"Install {path}")
     if dry_run:
@@ -96,8 +131,10 @@ def install(user, enable_kernel, dry_run):
     for path in files:
         safe_directory(path.parent)
         safe_destination(path)
-    if enable_kernel and MODPROBE.exists() and MODPROBE.read_bytes() != KERNEL_OPTION:
+    if enable_kernel and MODPROBE.exists() and MODPROBE.read_bytes() not in MANAGED_MODPROBE:
         raise ValueError("Refusing to overwrite an unmanaged modprobe file")
+    if enable_kernel and MODULES_LOAD in files and MODULES_LOAD.exists() and MODULES_LOAD.read_bytes() not in MANAGED_MODULES_LOAD:
+        raise ValueError("Refusing to overwrite an unmanaged modules-load file")
     active = systemctl("is-active", "--quiet", "omafans.service", check=False)
     if active.returncode == 0:
         systemctl("stop", "omafans.service")
@@ -109,11 +146,14 @@ def install(user, enable_kernel, dry_run):
     systemctl("enable", "omafans.service")
     print("Installed. Start omafans.service explicitly after reviewing setup and hardware compatibility.")
     if enable_kernel:
-        print("Kernel option installed. Reboot to apply; do not unload the driver on a running laptop.")
+        if selected == "it87":
+            print("Kernel module configuration installed for it87.")
+        else:
+            print("Kernel option installed. Reboot to apply; do not unload the driver on a running laptop.")
 
 
 def remove(dry_run):
-    paths = (UNIT, CONFIG / "controller.json", LIB / "omafans.py", MODPROBE)
+    paths = (UNIT, CONFIG / "controller.json", LIB / "omafans.py", MODPROBE, MODULES_LOAD)
     for path in paths:
         print(f"Remove if managed: {path}")
     if dry_run:
@@ -123,8 +163,10 @@ def remove(dry_run):
         if path.parent.exists():
             safe_directory(path.parent)
         safe_destination(path)
-    if MODPROBE.exists() and MODPROBE.read_bytes() != KERNEL_OPTION:
+    if MODPROBE.exists() and MODPROBE.read_bytes() not in MANAGED_MODPROBE:
         raise ValueError("Refusing to remove an unmanaged modprobe file")
+    if MODULES_LOAD.exists() and MODULES_LOAD.read_bytes() not in MANAGED_MODULES_LOAD:
+        raise ValueError("Refusing to remove an unmanaged modules-load file")
     if UNIT.exists():
         systemctl("disable", "--now", "omafans.service")
         status = systemctl("is-active", "--quiet", "omafans.service", check=False)
@@ -148,17 +190,18 @@ def main():
     parser.add_argument("action", choices=("install", "remove"))
     parser.add_argument("--user", help="Desktop account allowed to control the fan (required for install)")
     parser.add_argument("--enable-kernel-control", action="store_true")
+    parser.add_argument("--profile", choices=("auto", "thinkpad", "it87"), default="auto")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
     if args.action == "install" and not args.user:
         parser.error("install requires --user")
-    if args.action == "remove" and (args.user or args.enable_kernel_control):
+    if args.action == "remove" and (args.user or args.enable_kernel_control or args.profile != "auto"):
         parser.error("remove accepts only --dry-run")
     if not args.dry_run and os.geteuid() != 0:
         parser.error("Run the reviewed setup script as root, or use --dry-run")
     try:
         if args.action == "install":
-            install(args.user, args.enable_kernel_control, args.dry_run)
+            install(args.user, args.enable_kernel_control, args.dry_run, args.profile)
         else:
             remove(args.dry_run)
         return 0

@@ -595,6 +595,39 @@ class SysfsHardwareTests(unittest.TestCase):
         self.assertEqual((hardware.root / "pwm1_enable").read_text(), "1")
         self.assertFalse(hardware.write("fan_watchdog", 0))
 
+    def test_binds_it87_mini_s_profile_and_maps_pwm2_fan2(self):
+        write_hwmon(
+            self.root,
+            "hwmon3",
+            self.root / "devices/platform/it87.2608/hwmon/hwmon3",
+            "it8622",
+            {"temp1_input": 62000, "fan2_input": 4800, "pwm2": 95, "pwm2_enable": 2},
+        )
+        write_hwmon(
+            self.root,
+            "hwmon2",
+            self.root / "devices/platform/coretemp.0/hwmon/hwmon2",
+            "coretemp",
+            {"temp1_input": 68000},
+        )
+        hardware = app.Hardware(self.root)
+        self.assertTrue(hardware.available)
+        self.assertTrue(hardware.control_ready())
+        self.assertTrue(hardware.linear_pwm)
+        self.assertEqual(hardware.temperature(), 62000)
+        self.assertEqual(hardware.cpu_temperature(), 68000)
+        self.assertEqual(hardware.read("fan1_input"), 4800)
+        self.assertEqual(hardware.read("pwm1"), 95)
+        self.assertEqual(hardware.read("pwm1_enable"), 2)
+        controller = app.Controller(hardware, lambda: 100.0)
+        response = controller.request({"command": "set", "settings": {"mode": "manual", "manual_percent": 50}})
+        self.assertTrue(response["ok"])
+        self.assertEqual(response["percent"], 50)
+        self.assertEqual((hardware.root / "pwm2_enable").read_text(), "1")
+        self.assertEqual((hardware.root / "pwm2").read_text(), "128")
+        self.assertTrue(controller.safe())
+        self.assertEqual((hardware.root / "pwm2_enable").read_text(), "2")
+
 
 if __name__ == "__main__":
     unittest.main()

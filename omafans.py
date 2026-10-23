@@ -156,17 +156,48 @@ def plausible_temperature(value):
 
 
 class Hardware:
-    """Only the modern thinkpad_hwmon device is allowed to receive writes.
+    """Only supported platform hwmon devices are allowed to receive writes.
 
-    CPU package and core sensors are read-only inputs for the overheat
-    safeguard. Temperature curves continue to use ThinkPad temp1_input.
+    Supports Lenovo ThinkPad (thinkpad_hwmon) and AZW/Beelink Mini S
+    (it87.2608 Super I/O). CPU package and core sensors are read-only inputs
+    for the overheat safeguard.
     """
 
     CPU_NAMES = {"coretemp", "k10temp"}
+    PROFILES = (
+        {
+            "name": "thinkpad",
+            "prefix": "devices/platform/thinkpad_hwmon/hwmon",
+            "labels": {"thinkpad"},
+            "attrs": {
+                "pwm1": "pwm1",
+                "pwm1_enable": "pwm1_enable",
+                "fan1_input": "fan1_input",
+                "temp1_input": "temp1_input",
+            },
+            "linear_pwm": False,
+            "has_watchdog": True,
+        },
+        {
+            "name": "it87",
+            "prefix": "devices/platform/it87.2608/hwmon",
+            "labels": {"it8622", "it8613", "it8620", "it8628"},
+            "attrs": {
+                "pwm1": "pwm2",
+                "pwm1_enable": "pwm2_enable",
+                "fan1_input": "fan2_input",
+                "temp1_input": "temp1_input",
+            },
+            "linear_pwm": True,
+            "has_watchdog": False,
+        },
+    )
 
     def __init__(self, sysfs="/sys"):
         self.sysfs = Path(sysfs)
         self.root = None
+        self.profile = None
+        self.linear_pwm = False
         self.cpu_inputs = []
         self._bind_thinkpad()
         self._bind_cpu()
@@ -190,14 +221,34 @@ class Hardware:
 
     def _bind_thinkpad(self):
         self.root = None
-        prefix = self.sysfs / "devices/platform/thinkpad_hwmon/hwmon"
-        for label, device in self._hwmon_devices():
-            try:
-                if label == "thinkpad" and device.is_relative_to(prefix):
-                    self.root = device
-                    return
-            except (OSError, ValueError):
-                continue
+        self.profile = None
+        self.linear_pwm = False
+        devices = self._hwmon_devices()
+        for spec in self.PROFILES:
+            prefix = self.sysfs / spec["prefix"]
+            for label, device in devices:
+                try:
+                    if label in spec["labels"] and device.is_relative_to(prefix):
+                        self.root = device
+                        self.profile = spec
+                        self.linear_pwm = spec["linear_pwm"]
+                        return
+                except (OSError, ValueError):
+                    continue
+
+    def _attr_path(self, name):
+        if not self.root or not self.profile:
+            return None
+        actual = self.profile["attrs"].get(name)
+        if not actual:
+            return None
+        path = self.root / actual
+        try:
+            if path.is_symlink() or path.parent.resolve(strict=True) != self.root:
+                return None
+        except OSError:
+            return None
+        return path
 
     def _bind_cpu(self):
         inputs = []
@@ -232,15 +283,22 @@ class Hardware:
         return self.root is not None
 
     def control_ready(self):
-        try:
-            enabled = self._under_sysfs(FAN_CONTROL_PARAM).read_text(encoding="ascii").strip().lower()
-            return self.available and enabled in ("1", "y")
-        except (OSError, UnicodeError):
+        if not self.available or not self.profile:
             return False
+        if self.profile["name"] == "thinkpad":
+            try:
+                enabled = self._under_sysfs(FAN_CONTROL_PARAM).read_text(encoding="ascii").strip().lower()
+                return enabled in ("1", "y")
+            except (OSError, UnicodeError):
+                return False
+        pwm = self._attr_path("pwm1")
+        enable = self._attr_path("pwm1_enable")
+        return bool(pwm and enable and pwm.is_file() and enable.is_file())
 
     def read(self, name):
         self._ensure_thinkpad()
-        return read_number(self.root / name) if self.root else None
+        path = self._attr_path(name)
+        return read_number(path) if path else None
 
     def temperature(self):
         # temp1 is required. Disconnected or implausible readings fail closed.
@@ -261,7 +319,10 @@ class Hardware:
         self._ensure_thinkpad()
         if not self.root or name not in ("pwm1", "pwm1_enable"):
             return False
-        return self._write(self.root / name, value)
+        path = self._attr_path(name)
+        if not path:
+            return False
+        return self._write(path, value)
 
     @staticmethod
     def _write(path, value):
@@ -273,6 +334,9 @@ class Hardware:
             return False
 
     def watchdog(self, seconds):
+        self._ensure_thinkpad()
+        if self.profile and not self.profile["has_watchdog"]:
+            return self.control_ready()
         return self._write(self._under_sysfs(WATCHDOG_PATH), seconds)
 
 
@@ -402,8 +466,11 @@ class Controller:
         # Arm before manual mode, including before an overheat override.
         if not hw.watchdog(WATCHDOG_SECONDS):
             return self.fail("Fan watchdog could not be armed")
-        level = max(2, min(7, math.ceil(target * 7 / 100)))
-        pwm = level * 255 // 7
+        if getattr(hw, "linear_pwm", False):
+            pwm = max(77, min(255, round(target * 255 / 100)))
+        else:
+            level = max(2, min(7, math.ceil(target * 7 / 100)))
+            pwm = level * 255 // 7
         if not hw.write("pwm1_enable", 1) or not hw.write("pwm1", pwm):
             return self.fail("Fan write failed")
         if hw.read("pwm1_enable") != 1 or hw.read("pwm1") != pwm:

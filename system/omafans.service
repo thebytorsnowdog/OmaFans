@@ -1,6 +1,6 @@
 [Unit]
-Description=OmaFans ThinkPad fan controller
-After=sysinit.target
+Description=OmaFans fan controller
+After=sysinit.target systemd-modules-load.service
 Conflicts=thinkfan.service fancontrol.service nbfc.service nbfc_service.service omarchy-fanctl.service
 ConditionPathExists=/etc/omafans/controller.json
 
@@ -36,6 +36,7 @@ IPAddressDeny=any
 ReadOnlyPaths=/sys
 ReadWritePaths=-/sys/devices/platform/thinkpad_hwmon/hwmon
 ReadWritePaths=-/sys/bus/platform/drivers/thinkpad_hwmon/fan_watchdog
+ReadWritePaths=-/sys/devices/platform/it87.2608/hwmon
 SystemCallArchitectures=native
 
 [Install]

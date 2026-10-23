@@ -420,7 +420,7 @@ Panel {
             visible: root.cpuAhead && root.statusError === ""
             width: parent.width
             textFormat: Text.PlainText
-            text: "CPU is " + Math.round(Number(root.cpuTemperature)) + "°C, ahead of the ThinkPad sensor"
+            text: "CPU is " + Math.round(Number(root.cpuTemperature)) + "°C, ahead of the fan sensor"
             color: root.dim
             font.family: root.fontFamily
             font.pixelSize: Style.font.bodySmall

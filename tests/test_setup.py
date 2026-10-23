@@ -15,7 +15,13 @@ class SetupTests(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name)
         self.patches = [patch.object(setup, name, self.root / relative) for name, relative in [
-            ("LIB", "lib"), ("CONFIG", "config"), ("UNIT", "units/omafans.service"), ("MODPROBE", "modprobe/omafans.conf")]]
+            ("LIB", "lib"),
+            ("CONFIG", "config"),
+            ("UNIT", "units/omafans.service"),
+            ("MODPROBE", "modprobe/omafans.conf"),
+            ("MODULES_LOAD", "modules-load/omafans.conf"),
+            ("SYSFS", "sysfs"),
+        ]]
         for item in self.patches:
             item.start()
         self.account = SimpleNamespace(pw_uid=1000, pw_gid=1000)
@@ -82,6 +88,31 @@ class SetupTests(unittest.TestCase):
         with patch.object(setup, "safe_directory"), patch.object(setup, "safe_destination"), patch.object(setup, "systemctl", side_effect=call), patch("builtins.print"), self.assertRaises(ValueError):
             setup.remove(False)
         self.assertTrue(setup.UNIT.exists())
+
+    def test_detects_mini_s_dmi_and_installs_it87_kernel_files(self):
+        dmi = setup.SYSFS / "devices/virtual/dmi/id"
+        dmi.mkdir(parents=True)
+        (dmi / "sys_vendor").write_text("AZW\n")
+        (dmi / "product_name").write_text("MINI S\n")
+        self.assertEqual(setup.detect_profile(), "it87")
+
+        def fake_systemctl(*args, **kwargs):
+            return SimpleNamespace(returncode=3 if args[0] == "is-active" else 0, stdout=b"success\n")
+
+        def fixture_directory(path):
+            path.mkdir(parents=True, exist_ok=True)
+
+        with patch.object(setup.pwd, "getpwnam", return_value=self.account), \
+             patch.object(setup, "systemctl", side_effect=fake_systemctl), \
+             patch.object(setup, "safe_directory", side_effect=fixture_directory), \
+             patch.object(setup, "safe_destination"), \
+             patch("builtins.print"):
+            setup.install("fixture", True, False)
+            self.assertEqual(setup.MODPROBE.read_bytes(), setup.IT87_MODPROBE_OPTION)
+            self.assertEqual(setup.MODULES_LOAD.read_bytes(), setup.IT87_MODULES_LOAD)
+            setup.remove(False)
+        for path in (setup.UNIT, setup.MODPROBE, setup.MODULES_LOAD, setup.LIB, setup.CONFIG):
+            self.assertFalse(path.exists())
 
 
 if __name__ == "__main__":
