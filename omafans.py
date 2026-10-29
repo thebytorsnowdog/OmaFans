@@ -168,6 +168,7 @@ class Hardware:
         self.sysfs = Path(sysfs)
         self.root = None
         self.cpu_inputs = []
+        self._cpu_scan = 0.0
         self._bind_thinkpad()
         self._bind_cpu()
 
@@ -215,6 +216,21 @@ class Hardware:
                 except OSError:
                     continue
         self.cpu_inputs = inputs
+        self._cpu_scan = time.monotonic()
+
+    def _input_trusted(self, path):
+        # Trust this file only while its device name is still coretemp or k10temp.
+        try:
+            if path.is_symlink() or not path.is_file():
+                return False
+            name_path = path.parent / "name"
+            if name_path.is_symlink():
+                return False
+            with open(name_path, encoding="ascii") as stream:
+                label = stream.read(64).strip()
+        except (OSError, UnicodeError):
+            return False
+        return label in self.CPU_NAMES
 
     def _ensure_thinkpad(self):
         # hwmon numbers can change across resume; follow the platform device.
@@ -225,6 +241,14 @@ class Hardware:
     def _ensure_cpu(self):
         if self.cpu_inputs and any(not path.exists() for path in self.cpu_inputs):
             self._bind_cpu()
+            return
+        if self.cpu_inputs:
+            return
+        # Look again on the control interval so a sensor that appears after
+        # startup can feed the overheat safeguard.
+        if time.monotonic() - self._cpu_scan < POLL_SECONDS:
+            return
+        self._bind_cpu()
 
     @property
     def available(self):
@@ -250,8 +274,12 @@ class Hardware:
     def cpu_temperature(self):
         """Hottest current coretemp/k10temp reading, in millidegrees."""
         self._ensure_cpu()
+        if self.cpu_inputs and any(not self._input_trusted(path) for path in self.cpu_inputs):
+            self._bind_cpu()
         valid = []
         for path in self.cpu_inputs:
+            if not self._input_trusted(path):
+                continue
             value = read_number(path)
             if plausible_temperature(value):
                 valid.append(value)
