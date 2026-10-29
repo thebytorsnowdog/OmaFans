@@ -4,6 +4,7 @@ import os
 import shutil
 import socket
 import stat
+import struct
 import subprocess
 import sys
 import tempfile
@@ -375,6 +376,38 @@ class ProtocolTests(unittest.TestCase):
         control = app.Controller(Hardware())
         with first:
             app.handle_connection(second, control, os.getuid() + 1)
+            self.assertEqual(first.recv(100), b"")
+        self.assertIsNone(control.last_heartbeat)
+
+    def test_configured_uid_above_signed_range_is_accepted(self):
+        high = 2 ** 31
+        credential = struct.pack("3I", 42, high, 1000)
+        first, second = socket.socketpair()
+        control = app.Controller(Hardware())
+        with first, patch.object(socket.socket, "getsockopt", return_value=credential):
+            first.sendall(b'{"command":"status"}\n')
+            worker = threading.Thread(target=app.handle_connection, args=(second, control, high))
+            worker.start()
+            response = app.receive_message(first, 1)
+        worker.join(1)
+        self.assertFalse(worker.is_alive())
+        self.assertTrue(response["ok"])
+
+    def test_peer_uid_keeps_root_and_the_high_bit(self):
+        class Cred:
+            def __init__(self, raw):
+                self.raw = raw
+            def getsockopt(self, level, opt, size):
+                return self.raw
+        self.assertEqual(app.peer_uid(Cred(struct.pack("3I", 1, 0, 1))), 0)
+        self.assertEqual(app.peer_uid(Cred(struct.pack("3I", 1, 2 ** 31, 1))), 2 ** 31)
+
+    def test_different_uid_above_signed_range_is_rejected(self):
+        credential = struct.pack("3I", 42, 2 ** 31, 1000)
+        first, second = socket.socketpair()
+        control = app.Controller(Hardware())
+        with first, patch.object(socket.socket, "getsockopt", return_value=credential):
+            app.handle_connection(second, control, 2 ** 31 + 1)
             self.assertEqual(first.recv(100), b"")
         self.assertIsNone(control.last_heartbeat)
 
