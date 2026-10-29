@@ -1,6 +1,6 @@
 # OmaFans audit
 
-Source review of `main` at `277fcf3`, which includes merged pull request #2. The code change from this review is [pull request #3](https://github.com/thebytorsnowdog/OmaFans/pull/3). The trust model stays in [SECURITY.md](../SECURITY.md). The earlier verification record is [SECURITY_REVIEW.md](SECURITY_REVIEW.md).
+Source review of `main` at `277fcf3`, which includes merged pull request #2. The code change from this review is [pull request #3](https://github.com/thebytorsnowdog/OmaFans/pull/3). This note is [pull request #4](https://github.com/thebytorsnowdog/OmaFans/pull/4). The trust model stays in [SECURITY.md](../SECURITY.md). The earlier verification record is [SECURITY_REVIEW.md](SECURITY_REVIEW.md).
 
 ## Changes already on main
 
