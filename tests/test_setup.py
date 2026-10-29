@@ -74,6 +74,23 @@ class SetupTests(unittest.TestCase):
             self.assertFalse(path.exists())
         self.assertIn(("disable", "--now", "omafans.service"), calls)
 
+    def test_edited_modprobe_file_does_not_block_daemon_removal(self):
+        setup.UNIT.parent.mkdir()
+        setup.UNIT.write_text("unit")
+        setup.MODPROBE.parent.mkdir()
+        original = b"# edited locally\noptions thinkpad_acpi fan_control=1\n"
+        setup.MODPROBE.write_bytes(original)
+        calls = []
+        def call(*args, **kwargs):
+            calls.append(args)
+            return SimpleNamespace(returncode=3 if args[0] == "is-active" else 0, stdout=b"success\n")
+        with patch.object(setup, "safe_directory"), patch.object(setup, "safe_destination"), patch.object(setup, "systemctl", side_effect=call), patch("builtins.print") as printed:
+            setup.remove(False)
+        self.assertEqual(setup.MODPROBE.read_bytes(), original)
+        self.assertFalse(setup.UNIT.exists())
+        self.assertIn(("disable", "--now", "omafans.service"), calls)
+        self.assertIn("unmanaged", " ".join(str(item) for item in printed.call_args_list).lower())
+
     def test_failed_service_stop_retains_installed_files(self):
         setup.UNIT.parent.mkdir()
         setup.UNIT.write_text("fixture")
