@@ -571,6 +571,25 @@ class SysfsHardwareTests(unittest.TestCase):
         self.assertEqual(hardware.temperature(), 42000)
         self.assertEqual(hardware.cpu_temperature(), 93000)
 
+    def test_cpu_sensor_arriving_later_is_used_on_the_next_poll(self):
+        write_hwmon(self.root, "hwmon0", self.root / "devices/platform/thinkpad_hwmon/hwmon/hwmon0", "thinkpad", {"temp1_input": 40000})
+        start = time.monotonic()
+        with patch.object(app.time, "monotonic", return_value=start):
+            hardware = app.Hardware(self.root)
+        write_hwmon(self.root, "hwmon1", self.root / "devices/platform/coretemp.0/hwmon/hwmon1", "coretemp", {"temp1_input": 91000})
+        with patch.object(app.time, "monotonic", return_value=start + app.POLL_SECONDS + 0.001):
+            self.assertEqual(hardware.cpu_temperature(), 91000)
+
+    def test_renamed_hwmon_reading_is_not_used_as_cpu_temperature(self):
+        cpu = self.root / "devices/platform/coretemp.0/hwmon/hwmon1"
+        write_hwmon(self.root, "hwmon1", cpu, "coretemp", {"temp1_input": 64000})
+        hardware = app.Hardware(self.root)
+        self.assertEqual(hardware.cpu_temperature(), 64000)
+        (cpu / "name").write_text("nvme\n")
+        (cpu / "temp1_input").write_text("120000\n")
+        write_hwmon(self.root, "hwmon4", self.root / "devices/platform/coretemp.0/hwmon/hwmon4", "coretemp", {"temp1_input": 96000})
+        self.assertEqual(hardware.cpu_temperature(), 96000)
+
     def test_rebinds_when_the_hwmon_node_disappears(self):
         write_hwmon(self.root, "hwmon0", self.root / "devices/platform/thinkpad_hwmon/hwmon/hwmon0", "thinkpad", {"temp1_input": 40000})
         hardware = app.Hardware(self.root)
