@@ -26,8 +26,9 @@ Other models remain untested.
 **Sustained thermal stress has not passed:** full and reduced CPU-load attempts
 stopped at preset temperature limits. Fan response and sensor availability were
 observed, but these short runs do not establish adequate cooling under sustained
-load. The displayed ThinkPad sensor can lag the hottest CPU reading; the 92°C
-override monitors that ThinkPad input, not every CPU core.
+load. The displayed ThinkPad sensor can lag the hottest CPU reading; at 92°C
+the override requests level 7 for ThinkPad `temp1_input` or a hot `coretemp`
+or `k10temp` reading, not only the ThinkPad sensor.
 Start with monitoring, review the code, and assess your hardware before enabling
 control. See [verification scope](docs/SECURITY_REVIEW.md).
 
