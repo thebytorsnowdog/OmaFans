@@ -463,12 +463,17 @@ def read_config(path=CONFIG_PATH):
     return config
 
 
+def peer_uid(connection):
+    # uid_t is unsigned. A signed unpack would reject an account above 2**31 - 1.
+    credentials = connection.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, struct.calcsize("3I"))
+    _, uid, _ = struct.unpack("3I", credentials)
+    return uid
+
+
 def handle_connection(connection, controller, allowed_uid):
     with connection:
         try:
-            credentials = connection.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, struct.calcsize("3i"))
-            _, uid, _ = struct.unpack("3i", credentials)
-            if uid != allowed_uid:
+            if peer_uid(connection) != allowed_uid:
                 return
             request = receive_message(connection, IO_TIMEOUT)
             response = controller.request(request)
@@ -574,9 +579,7 @@ def client_request(request, path=SOCKET_PATH):
         connection.settimeout(CLIENT_TIMEOUT)
         connection.connect(path)
         # Prevent a replaced, unprivileged local socket impersonating the daemon.
-        credentials = connection.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, struct.calcsize("3i"))
-        _, uid, _ = struct.unpack("3i", credentials)
-        if uid != 0:
+        if peer_uid(connection) != 0:
             raise ValueError("Daemon is not root-owned")
         connection.sendall(encode_message(request))
         return receive_message(connection, CLIENT_TIMEOUT)
