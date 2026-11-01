@@ -522,13 +522,22 @@ class ProtocolTests(unittest.TestCase):
 
     def test_isolated_client_entry_prints_status(self):
         result = subprocess.run(
-            [sys.executable, "-I", str(Path(app.__file__).resolve()), "status"],
+            [sys.executable, "-I", "-S", str(Path(app.__file__).resolve()), "status"],
             check=False, capture_output=True, text=True, timeout=5,
         )
         self.assertEqual(result.returncode, 0, result.stderr)
         parsed = json.loads(result.stdout)
         self.assertIn("cpu_temperature", parsed)
         self.assertFalse(parsed["service"])
+
+    def test_site_enabled_start_is_refused_before_status(self):
+        result = subprocess.run(
+            [sys.executable, "-I", str(Path(app.__file__).resolve()), "status"],
+            check=False, capture_output=True, text=True, timeout=5,
+        )
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.stdout, "")
+        self.assertIn("python3 -I -S", result.stderr)
 
     def test_cli_wrapper_reexecs_isolated_status(self):
         result = subprocess.run(

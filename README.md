@@ -43,7 +43,7 @@ control. See [verification scope](docs/SECURITY_REVIEW.md).
 > **Return to firmware Auto:** `sudo systemctl stop omafans.service` (the service
 > releases control on stop). If the daemon is not responding, run
 > `echo level auto | sudo tee /proc/acpi/ibm/fan`. To disable control completely, run
-> `sudo /usr/bin/python3 -I scripts/setup.py remove` and reboot.
+> `sudo /usr/bin/python3 -I -S scripts/setup.py remove` and reboot.
 >
 > **Overheat safeguard limit:** at 92°C on ThinkPad `temp1_input` **or** a
 > trusted CPU sensor (`coretemp` / `k10temp`), OmaFans requests level 7, the
@@ -73,7 +73,7 @@ omarchy plugin enable community.omafans --section right
 # 2. Optional fan control: preview, install, then reboot
 cd ~/.config/omarchy/plugins/community.omafans
 python3 scripts/setup.py install --user "$(id -un)" --dry-run
-sudo /usr/bin/python3 -I scripts/setup.py install --user "$(id -un)" --enable-kernel-control
+sudo /usr/bin/python3 -I -S scripts/setup.py install --user "$(id -un)" --enable-kernel-control
 ```
 
 Read [Optional fan control](#optional-fan-control) before step 2. To uninstall, see [Remove](#remove).
@@ -91,7 +91,9 @@ Read [Optional fan control](#optional-fan-control) before step 2. To uninstall, 
 The runtime uses only Python's standard library, Qt/Quickshell and the Omarchy
 UI already installed on the host. There are no pip runtime dependencies,
 online accounts, telemetry, HTTP listeners or runtime downloads. The widget
-launches the client with `python3 -I`, so user-site packages are not imported.
+launches the client with `/usr/bin/python3 -I -S`. `-I` skips user-site
+packages and `PYTHON*` variables. `-S` skips system site startup, including
+`sitecustomize` and `import` lines in `.pth` files.
 
 ## Supported hardware
 
@@ -132,7 +134,7 @@ python3 scripts/setup.py install --user "$(id -un)" --dry-run
 To install the root-owned daemon and opt into the kernel driver setting:
 
 ```bash
-sudo /usr/bin/python3 -I scripts/setup.py install --user "$(id -un)" --enable-kernel-control
+sudo /usr/bin/python3 -I -S scripts/setup.py install --user "$(id -un)" --enable-kernel-control
 ```
 
 This enables the service for the next boot; it does not start it immediately.
@@ -217,7 +219,7 @@ If the system component was installed, remove it **before** the plugin:
 
 ```bash
 cd ~/.config/omarchy/plugins/community.omafans
-sudo /usr/bin/python3 -I scripts/setup.py remove
+sudo /usr/bin/python3 -I -S scripts/setup.py remove
 omarchy plugin remove community.omafans
 ```
 

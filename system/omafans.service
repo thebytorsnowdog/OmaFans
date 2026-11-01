@@ -6,8 +6,9 @@ ConditionPathExists=/etc/omafans/controller.json
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/python3 -I /usr/local/lib/omafans/omafans.py serve
-ExecStopPost=/usr/bin/python3 -I /usr/local/lib/omafans/omafans.py release
+# -I still imports site, which runs sitecustomize and executable .pth lines.
+ExecStart=/usr/bin/python3 -I -S /usr/local/lib/omafans/omafans.py serve
+ExecStopPost=/usr/bin/python3 -I -S /usr/local/lib/omafans/omafans.py release
 Restart=no
 TimeoutStopSec=5
 RuntimeDirectory=omafans
