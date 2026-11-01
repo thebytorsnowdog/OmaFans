@@ -149,17 +149,22 @@ def remove(dry_run):
         print("Removed the system component. Reboot to clear its kernel option; remove the shell plugin separately.")
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("install", "remove"))
     parser.add_argument("--user", help="Desktop account allowed to control the fan (required for install)")
     parser.add_argument("--enable-kernel-control", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     if args.action == "install" and not args.user:
         parser.error("install requires --user")
     if args.action == "remove" and (args.user or args.enable_kernel_control):
         parser.error("remove accepts only --dry-run")
+    # Same limit as the daemon: a root installer must not be the process that
+    # already imported site. -S has to be on the command that started Python.
+    if os.geteuid() == 0 and not (sys.flags.isolated and sys.flags.no_site):
+        print("Setup failed: privileged setup must be started with /usr/bin/python3 -I -S", file=sys.stderr)
+        return 1
     if not args.dry_run and os.geteuid() != 0:
         parser.error("Run the reviewed setup script as root, or use --dry-run")
     try:

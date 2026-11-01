@@ -42,6 +42,16 @@ class SetupTests(unittest.TestCase):
             setup.install("fixture", False, False)
         self.assertEqual(list(self.root.iterdir()), [])
 
+    def test_unprivileged_dry_run_allows_a_site_enabled_interpreter(self):
+        with patch.object(setup.pwd, "getpwnam", return_value=self.account), patch("builtins.print"):
+            self.assertEqual(setup.main(["install", "--user", "fixture", "--dry-run"]), 0)
+
+    def test_root_setup_refuses_site_enabled_interpreter(self):
+        flags = SimpleNamespace(isolated=False, no_site=False)
+        with patch.object(setup.os, "geteuid", return_value=0), patch.object(setup.sys, "flags", flags), patch.object(setup, "install") as install, patch("builtins.print"):
+            self.assertEqual(setup.main(["install", "--user", "fixture", "--dry-run"]), 1)
+        install.assert_not_called()
+
     def test_root_controller_is_rejected(self):
         with patch.object(setup.pwd, "getpwnam", return_value=SimpleNamespace(pw_uid=0,pw_gid=0)), self.assertRaises(ValueError):
             setup.install("fixture", False, True)

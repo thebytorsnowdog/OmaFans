@@ -11,8 +11,12 @@ including sensitive details. There is no guaranteed response SLA.
 The QML plugin runs inside the user's Omarchy shell. That environment and the
 selected desktop account are trusted to request fan control. Only the separately
 installed, root-owned daemon writes hardware. systemd starts its standalone
-Python file with `-I`; it imports only the standard library and cannot read
-home directories under the supplied service sandbox.
+Python file with `-I -S`. `-I` ignores user site-packages and `PYTHON*`
+variables. `-S` skips `site` startup, so the process does not import
+`sitecustomize` or execute `import` lines in system `.pth` files. `-I` alone
+still does both. The program imports only the standard library. A start without
+those flags exits before it opens the socket or writes the fan. The service
+sandbox cannot read home directories.
 
 IPC uses a local Unix socket with mode 0600, owned by the configured desktop
 account inside a root-owned directory that prevents socket replacement. The
@@ -48,7 +52,7 @@ directories, atomic replacement, and fixed `systemctl` argument arrays.
   value does not prove adequate cooling. The 92°C override uses ThinkPad
   `temp1_input` and, when present, `coretemp` or `k10temp` readings. The curve
   still follows `temp1_input` only. Other controllers must not run concurrently.
-- The unprivileged client is started with Python isolated mode (`-I`). A local
+- The unprivileged client is started with `python3 -I -S`. A local
   socket whose peer is not root is refused before any request bytes are sent.
 - A local authorized client can consume bounded IPC work. The Unix accept
   queue and request deadline limit individual requests; this is not a general
@@ -64,7 +68,7 @@ directories, atomic replacement, and fixed `systemctl` argument arrays.
 Bandit has three narrow, reviewed annotations: `B404` for importing subprocess
 in the explicit installer, `B603` for its fixed `/usr/bin/systemctl` argument
 arrays, and `B606` for `fanctl.py` re-executing the adjacent `omafans.py`
-under `python3 -I`. These are deliberate
+under `python3 -I -S`. These are deliberate
 capabilities with the boundaries described above. They are not blanket rule
 exclusions; other instances remain checked. Omarchy's advisory scanner also
 reports process execution, output collection, installation and service

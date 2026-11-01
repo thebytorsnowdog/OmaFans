@@ -680,4 +680,10 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
+    # Site hooks run before the first line of this file. The flag has to be
+    # present on the initial command; refusing here stops a manual start that
+    # omitted it from opening the socket or writing the fan.
+    if not (sys.flags.isolated and sys.flags.no_site):
+        print("OmaFans: start this program with python3 -I -S", file=sys.stderr)
+        raise SystemExit(1)
     raise SystemExit(main())
