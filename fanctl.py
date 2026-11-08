@@ -6,8 +6,9 @@ import sys
 
 def main():
     # Fixed re-exec of the adjacent controller client. No shell and no chosen executable.
+    # -S is required: -I still runs sitecustomize and executable .pth lines.
     script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "omafans.py")
-    os.execv(sys.executable, [sys.executable, "-I", script, *sys.argv[1:]])  # nosec B606
+    os.execv(sys.executable, [sys.executable, "-I", "-S", script, *sys.argv[1:]])  # nosec B606
 
 
 if __name__ == "__main__":

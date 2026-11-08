@@ -12,7 +12,7 @@ To reproduce it on a test desktop:
    folder named `community.omafans` under the user's Omarchy plugins directory.
 3. In that temporary copy only, change `Service.qml` so its helper command
    runs a script that prints the exact JSON in `demo/status.json`. The
-   production service launches `/usr/bin/python3 -I omafans.py`. The fixture
+   production service launches `/usr/bin/python3 -I -S omafans.py`. The fixture
    performs no hardware or network operations. Do not install or start the
    privileged daemon.
 4. Rescan, enable `community.omafans`, and verify

@@ -20,7 +20,7 @@ Item {
   property var cpuTemperature: null
   readonly property bool busy: helper.running
   readonly property string helperPath: decodeURIComponent(Qt.resolvedUrl("omafans.py").toString().replace(/^file:\/\//, ""))
-  readonly property var pythonCommand: ["/usr/bin/python3", "-I", helperPath]
+  readonly property var pythonCommand: ["/usr/bin/python3", "-I", "-S", helperPath]
   property string pendingPayload: ""
   property string activeVerb: ""
   readonly property bool controlPending: pendingPayload !== ""

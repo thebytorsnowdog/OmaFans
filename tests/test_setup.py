@@ -48,6 +48,18 @@ class SetupTests(unittest.TestCase):
             setup.install("fixture", False, False)
         self.assertEqual(list(self.root.iterdir()), [])
 
+    def test_unprivileged_dry_run_allows_a_site_enabled_interpreter(self):
+        with patch.object(setup.pwd, "getpwnam", return_value=self.account), patch("builtins.print"):
+            self.assertEqual(setup.main(["install", "--user", "fixture", "--dry-run"]), 0)
+
+    def test_root_setup_refuses_site_enabled_interpreter(self):
+        flags = SimpleNamespace(**{name: getattr(setup.sys.flags, name) for name in dir(setup.sys.flags) if not name.startswith("_")})
+        flags.isolated = False
+        flags.no_site = False
+        with patch.object(setup.os, "geteuid", return_value=0), patch.object(setup.sys, "flags", flags), patch.object(setup, "install") as install, patch("builtins.print"):
+            self.assertEqual(setup.main(["install", "--user", "fixture", "--dry-run"]), 1)
+        install.assert_not_called()
+
     def test_root_controller_is_rejected(self):
         with patch.object(setup.pwd, "getpwnam", return_value=SimpleNamespace(pw_uid=0,pw_gid=0)), self.assertRaises(ValueError):
             setup.install("fixture", False, True)
@@ -79,6 +91,32 @@ class SetupTests(unittest.TestCase):
         for path in (setup.UNIT, setup.MODPROBE, setup.LIB, setup.CONFIG):
             self.assertFalse(path.exists())
         self.assertIn(("disable", "--now", "omafans.service"), calls)
+
+    def test_edited_kernel_files_do_not_block_daemon_removal(self):
+        for edited_modprobe, edited_modules in ((True, False), (False, True), (True, True)):
+            with self.subTest(modprobe=edited_modprobe, modules_load=edited_modules):
+                setup.UNIT.parent.mkdir(exist_ok=True)
+                setup.UNIT.write_text("unit")
+                setup.MODPROBE.parent.mkdir(exist_ok=True)
+                setup.MODULES_LOAD.parent.mkdir(exist_ok=True)
+                modprobe = b"# edited locally\noptions it87 force_id=0x8622\n" if edited_modprobe else setup.IT87_MODPROBE_OPTION
+                modules = b"# edited locally\nit87\n" if edited_modules else setup.IT87_MODULES_LOAD
+                setup.MODPROBE.write_bytes(modprobe)
+                setup.MODULES_LOAD.write_bytes(modules)
+                calls = []
+                def call(*args, **kwargs):
+                    calls.append(args)
+                    return SimpleNamespace(returncode=3 if args[0] == "is-active" else 0, stdout=b"success\n")
+                with patch.object(setup, "safe_directory"), patch.object(setup, "safe_destination"), patch.object(setup, "systemctl", side_effect=call), patch("builtins.print") as printed:
+                    setup.remove(False)
+                for path, edited, original in ((setup.MODPROBE, edited_modprobe, modprobe), (setup.MODULES_LOAD, edited_modules, modules)):
+                    if edited:
+                        self.assertEqual(path.read_bytes(), original)
+                    else:
+                        self.assertFalse(path.exists())
+                self.assertFalse(setup.UNIT.exists())
+                self.assertIn(("disable", "--now", "omafans.service"), calls)
+                self.assertIn("unmanaged", " ".join(str(item) for item in printed.call_args_list).lower())
 
     def test_failed_service_stop_retains_installed_files(self):
         setup.UNIT.parent.mkdir()

@@ -200,6 +200,7 @@ class Hardware:
         self.profile = None
         self.linear_pwm = False
         self.cpu_inputs = []
+        self._cpu_scan = 0.0
         self._bind_thinkpad()
         self._bind_cpu()
 
@@ -267,6 +268,21 @@ class Hardware:
                 except OSError:
                     continue
         self.cpu_inputs = inputs
+        self._cpu_scan = time.monotonic()
+
+    def _input_trusted(self, path):
+        # Trust this file only while its device name is still coretemp or k10temp.
+        try:
+            if path.is_symlink() or not path.is_file():
+                return False
+            name_path = path.parent / "name"
+            if name_path.is_symlink():
+                return False
+            with open(name_path, encoding="ascii") as stream:
+                label = stream.read(64).strip()
+        except (OSError, UnicodeError):
+            return False
+        return label in self.CPU_NAMES
 
     def _ensure_thinkpad(self):
         # hwmon numbers can change across resume; follow the platform device.
@@ -277,6 +293,14 @@ class Hardware:
     def _ensure_cpu(self):
         if self.cpu_inputs and any(not path.exists() for path in self.cpu_inputs):
             self._bind_cpu()
+            return
+        if self.cpu_inputs:
+            return
+        # Look again on the control interval so a sensor that appears after
+        # startup can feed the overheat safeguard.
+        if time.monotonic() - self._cpu_scan < POLL_SECONDS:
+            return
+        self._bind_cpu()
 
     @property
     def available(self):
@@ -318,8 +342,12 @@ class Hardware:
     def cpu_temperature(self):
         """Hottest current coretemp/k10temp reading, in millidegrees."""
         self._ensure_cpu()
+        if self.cpu_inputs and any(not self._input_trusted(path) for path in self.cpu_inputs):
+            self._bind_cpu()
         valid = []
         for path in self.cpu_inputs:
+            if not self._input_trusted(path):
+                continue
             value = read_number(path)
             if plausible_temperature(value):
                 valid.append(value)
@@ -558,12 +586,17 @@ def read_config(path=CONFIG_PATH):
     return config
 
 
+def peer_uid(connection):
+    # uid_t is unsigned. A signed unpack would reject an account above 2**31 - 1.
+    credentials = connection.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, struct.calcsize("3I"))
+    _, uid, _ = struct.unpack("3I", credentials)
+    return uid
+
+
 def handle_connection(connection, controller, allowed_uid):
     with connection:
         try:
-            credentials = connection.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, struct.calcsize("3i"))
-            _, uid, _ = struct.unpack("3i", credentials)
-            if uid != allowed_uid:
+            if peer_uid(connection) != allowed_uid:
                 return
             request = receive_message(connection, IO_TIMEOUT)
             response = controller.request(request)
@@ -669,9 +702,7 @@ def client_request(request, path=SOCKET_PATH):
         connection.settimeout(CLIENT_TIMEOUT)
         connection.connect(path)
         # Prevent a replaced, unprivileged local socket impersonating the daemon.
-        credentials = connection.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, struct.calcsize("3i"))
-        _, uid, _ = struct.unpack("3i", credentials)
-        if uid != 0:
+        if peer_uid(connection) != 0:
             raise ValueError("Daemon is not root-owned")
         connection.sendall(encode_message(request))
         return receive_message(connection, CLIENT_TIMEOUT)
@@ -744,4 +775,10 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
+    # Site hooks run before the first line of this file. The flag has to be
+    # present on the initial command; refusing here stops a manual start that
+    # omitted it from opening the socket or writing the fan.
+    if not (sys.flags.isolated and sys.flags.no_site):
+        print("OmaFans: start this program with python3 -I -S", file=sys.stderr)
+        raise SystemExit(1)
     raise SystemExit(main())

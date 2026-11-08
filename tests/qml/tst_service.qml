@@ -83,7 +83,8 @@ TestCase {
   }
   function test_helper_uses_isolated_interpreter() {
     compare(service.pythonCommand[1], "-I")
-    verify(String(service.pythonCommand[2]).indexOf("omafans.py") > 0)
+    compare(service.pythonCommand[2], "-S")
+    verify(String(service.pythonCommand[3]).indexOf("omafans.py") > 0)
   }
   function test_cpu_temperature_is_kept_when_numeric() {
     service.applyStatus(JSON.stringify({ available: true, service: true,

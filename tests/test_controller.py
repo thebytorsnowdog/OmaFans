@@ -4,6 +4,7 @@ import os
 import shutil
 import socket
 import stat
+import struct
 import subprocess
 import sys
 import tempfile
@@ -378,6 +379,38 @@ class ProtocolTests(unittest.TestCase):
             self.assertEqual(first.recv(100), b"")
         self.assertIsNone(control.last_heartbeat)
 
+    def test_configured_uid_above_signed_range_is_accepted(self):
+        high = 2 ** 31
+        credential = struct.pack("3I", 42, high, 1000)
+        first, second = socket.socketpair()
+        control = app.Controller(Hardware())
+        with first, patch.object(socket.socket, "getsockopt", return_value=credential):
+            first.sendall(b'{"command":"status"}\n')
+            worker = threading.Thread(target=app.handle_connection, args=(second, control, high))
+            worker.start()
+            response = app.receive_message(first, 1)
+        worker.join(1)
+        self.assertFalse(worker.is_alive())
+        self.assertTrue(response["ok"])
+
+    def test_peer_uid_keeps_root_and_the_high_bit(self):
+        class Cred:
+            def __init__(self, raw):
+                self.raw = raw
+            def getsockopt(self, level, opt, size):
+                return self.raw
+        self.assertEqual(app.peer_uid(Cred(struct.pack("3I", 1, 0, 1))), 0)
+        self.assertEqual(app.peer_uid(Cred(struct.pack("3I", 1, 2 ** 31, 1))), 2 ** 31)
+
+    def test_different_uid_above_signed_range_is_rejected(self):
+        credential = struct.pack("3I", 42, 2 ** 31, 1000)
+        first, second = socket.socketpair()
+        control = app.Controller(Hardware())
+        with first, patch.object(socket.socket, "getsockopt", return_value=credential):
+            app.handle_connection(second, control, 2 ** 31 + 1)
+            self.assertEqual(first.recv(100), b"")
+        self.assertIsNone(control.last_heartbeat)
+
     def test_slow_sender_has_total_deadline(self):
         first, second = socket.socketpair()
         with first, second:
@@ -487,21 +520,43 @@ class ProtocolTests(unittest.TestCase):
         self.assertFalse(worker.is_alive())
         self.assertEqual(received, [b""])
 
+    def isolated_cli_fixture(self, wrapper=False):
+        # Exercise the real entry point and wrapper flags without contacting an
+        # installed daemon or discovering the host's hardware.
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = Path(app.__file__).resolve()
+            (root / "omafans.py").write_text(
+                "import runpy\nfrom unittest.mock import patch\n"
+                "with patch('socket.socket.connect', side_effect=FileNotFoundError), "
+                "patch('glob.glob', return_value=[]):\n"
+                f"    runpy.run_path({str(source)!r}, run_name='__main__')\n"
+            )
+            if wrapper:
+                shutil.copyfile(source.parent / "fanctl.py", root / "fanctl.py")
+                command = [sys.executable, str(root / "fanctl.py"), "status"]
+            else:
+                command = [sys.executable, "-I", "-S", str(root / "omafans.py"), "status"]
+            return subprocess.run(command, check=False, capture_output=True, text=True, timeout=5)
+
     def test_isolated_client_entry_prints_status(self):
-        result = subprocess.run(
-            [sys.executable, "-I", str(Path(app.__file__).resolve()), "status"],
-            check=False, capture_output=True, text=True, timeout=5,
-        )
+        result = self.isolated_cli_fixture()
         self.assertEqual(result.returncode, 0, result.stderr)
         parsed = json.loads(result.stdout)
         self.assertIn("cpu_temperature", parsed)
         self.assertIsInstance(parsed["service"], bool)
 
-    def test_cli_wrapper_reexecs_isolated_status(self):
+    def test_site_enabled_start_is_refused_before_status(self):
         result = subprocess.run(
-            [sys.executable, str(Path(app.__file__).resolve().parent / "fanctl.py"), "status"],
+            [sys.executable, "-I", str(Path(app.__file__).resolve()), "status"],
             check=False, capture_output=True, text=True, timeout=5,
         )
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.stdout, "")
+        self.assertIn("python3 -I -S", result.stderr)
+
+    def test_cli_wrapper_reexecs_isolated_status(self):
+        result = self.isolated_cli_fixture(wrapper=True)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("cpu_temperature", json.loads(result.stdout))
 
@@ -570,6 +625,25 @@ class SysfsHardwareTests(unittest.TestCase):
         write_hwmon(self.root, "hwmon4", self.root / "devices/platform/coretemp.0/hwmon/hwmon4", "coretemp", {"temp1_input": 93000})
         self.assertEqual(hardware.temperature(), 42000)
         self.assertEqual(hardware.cpu_temperature(), 93000)
+
+    def test_cpu_sensor_arriving_later_is_used_on_the_next_poll(self):
+        write_hwmon(self.root, "hwmon0", self.root / "devices/platform/thinkpad_hwmon/hwmon/hwmon0", "thinkpad", {"temp1_input": 40000})
+        start = time.monotonic()
+        with patch.object(app.time, "monotonic", return_value=start):
+            hardware = app.Hardware(self.root)
+        write_hwmon(self.root, "hwmon1", self.root / "devices/platform/coretemp.0/hwmon/hwmon1", "coretemp", {"temp1_input": 91000})
+        with patch.object(app.time, "monotonic", return_value=start + app.POLL_SECONDS + 0.001):
+            self.assertEqual(hardware.cpu_temperature(), 91000)
+
+    def test_renamed_hwmon_reading_is_not_used_as_cpu_temperature(self):
+        cpu = self.root / "devices/platform/coretemp.0/hwmon/hwmon1"
+        write_hwmon(self.root, "hwmon1", cpu, "coretemp", {"temp1_input": 64000})
+        hardware = app.Hardware(self.root)
+        self.assertEqual(hardware.cpu_temperature(), 64000)
+        (cpu / "name").write_text("nvme\n")
+        (cpu / "temp1_input").write_text("120000\n")
+        write_hwmon(self.root, "hwmon4", self.root / "devices/platform/coretemp.0/hwmon/hwmon4", "coretemp", {"temp1_input": 96000})
+        self.assertEqual(hardware.cpu_temperature(), 96000)
 
     def test_rebinds_when_the_hwmon_node_disappears(self):
         write_hwmon(self.root, "hwmon0", self.root / "devices/platform/thinkpad_hwmon/hwmon/hwmon0", "thinkpad", {"temp1_input": 40000})
