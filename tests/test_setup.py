@@ -73,13 +73,14 @@ class SetupTests(unittest.TestCase):
         def fixture_directory(path):
             path.mkdir(parents=True, exist_ok=True)
         # Ownership checks are tested separately; no root operations are used.
-        with patch.object(setup.pwd, "getpwnam", return_value=self.account), patch.object(setup, "systemctl", side_effect=fake_systemctl), patch.object(setup, "safe_directory", side_effect=fixture_directory), patch.object(setup, "safe_destination"), patch("builtins.print"):
+        with patch.object(setup.pwd, "getpwnam", return_value=self.account), patch.object(setup, "systemctl", side_effect=fake_systemctl), patch.object(setup, "safe_directory", side_effect=fixture_directory), patch.object(setup, "safe_destination"), patch("builtins.print") as printed:
             setup.install("fixture", True, False)
             self.assertEqual((setup.LIB / "omafans.py").read_bytes(), (setup.SOURCE / "omafans.py").read_bytes())
             self.assertEqual((setup.CONFIG / "controller.json").stat().st_mode & 0o777, 0o600)
             self.assertTrue(setup.UNIT.exists())
             setup.install("fixture", True, False)
             setup.remove(False)
+        self.assertIn("Reboot to clear its kernel option", " ".join(str(item) for item in printed.call_args_list))
         for path in (setup.UNIT, setup.MODPROBE, setup.LIB, setup.CONFIG):
             self.assertFalse(path.exists())
         self.assertIn(("disable", "--now", "omafans.service"), calls)
@@ -100,6 +101,18 @@ class SetupTests(unittest.TestCase):
         self.assertFalse(setup.UNIT.exists())
         self.assertIn(("disable", "--now", "omafans.service"), calls)
         self.assertIn("unmanaged", " ".join(str(item) for item in printed.call_args_list).lower())
+
+    def test_remove_without_kernel_file_does_not_ask_for_a_reboot(self):
+        setup.UNIT.parent.mkdir()
+        setup.UNIT.write_text("unit")
+        def call(*args, **kwargs):
+            return SimpleNamespace(returncode=3 if args[0] == "is-active" else 0, stdout=b"success\n")
+        with patch.object(setup, "safe_directory"), patch.object(setup, "safe_destination"), patch.object(setup, "systemctl", side_effect=call), patch("builtins.print") as printed:
+            setup.remove(False)
+        text = " ".join(str(item) for item in printed.call_args_list)
+        self.assertIn("No OmaFans kernel option file was present", text)
+        self.assertNotIn("Reboot to clear its kernel option", text)
+        self.assertFalse(setup.UNIT.exists())
 
     def test_failed_service_stop_retains_installed_files(self):
         setup.UNIT.parent.mkdir()

@@ -16,7 +16,7 @@ unit-tested behavior and was not given a new sustained-load or model run.
   wakeup pipe keeps shutdown prompt without a 250 ms idle poll.
 - If the ThinkPad hwmon node disappears, the daemon binds the platform device
   again instead of keeping a stale path.
-- The widget client runs under `python3 -I`. A non-root peer on the control
+- The widget client runs under `python3 -I -S`. A non-root peer on the control
   socket is refused before a request is written.
 - A control click that arrives while a refresh is running is queued once.
 - Install replacement fsyncs the destination directory. Oversized controller
@@ -61,7 +61,7 @@ for the full trust model.
 | --- | --- |
 | `python3 -m unittest discover -s tests -v` | 41 tests passed; fake hardware plus real Unix socket pairs; sensor recovery, failed-fallback latching and startup sensor gaps covered |
 | QtTest service suite | Nine behavior tests plus init/cleanup passed; no failures; recovered status re-enables controls and clears the stale error |
-| Bandit 1.9.4 | No outstanding findings on daemon, client and setup code; two narrow reviewed annotations described in SECURITY.md |
+| Bandit 1.9.4 | No outstanding findings on daemon, client and setup code; three narrow reviewed annotations described in SECURITY.md |
 | Gitleaks 8.30.1 | No secrets found; CI scans the full Git history |
 | Portable Omarchy validation | Valid manifest and entry points |
 | Installed `omarchy plugin validate .` | Passed on Omarchy 4.0.4-1 |
