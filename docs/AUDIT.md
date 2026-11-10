@@ -26,7 +26,7 @@ While `Controller.fault` is set, `tick` calls `recover_sensor` and returns. That
 
 In firmware Auto, `tick` calls `safe` on every pass. `safe` writes `pwm1_enable` and then the watchdog. That write is how the daemon disarms the watchdog after manual mode. Skipping it could leave the watchdog armed. The writes are unchanged.
 
-`Service.qml` runs a repeating timer of 3000 ms. Each firing starts `/usr/bin/python3 -I` on `omafans.py` with the argument `heartbeat`, unless a helper is already running. Keeping one Python process open for later heartbeats would change how the widget starts the client. That timer is not a fan-write defect, and the widget cannot be run here.
+`Service.qml` runs a repeating timer of 3000 ms. Each firing starts `/usr/bin/python3 -I -S` on `omafans.py` with the argument `heartbeat`, unless a helper is already running. The review originally omitted `-S`. Pull request #8 added it. Keeping one Python process open for later heartbeats would change how the widget starts the client. That timer is not a fan-write defect, and the widget cannot be run here.
 
 `Panel.applyCurve` sets `curveDraftTouched` to false before the daemon answers. `valid_curve` still rejects a curve that breaks the five-point rules, and the service copies the error into the panel. The draft hint no longer says the curve is edited. The panel is unchanged. This environment cannot load `Panel.qml`, so there is no local test for that flag. A later design pass will define shared UI tokens.
 
@@ -38,7 +38,7 @@ The unit sets `CapabilityBoundingSet=CAP_CHOWN CAP_DAC_OVERRIDE` for the whole p
 
 `serve` raises when `control_ready` is false, and the unit sets `Restart=no`. A start that races the `thinkpad_acpi` module exits and stays stopped. The widget then remains in monitoring. A restart loop was not added. A crash loop could keep arming the watchdog. The release check requires `Restart=no`.
 
-`.github/workflows/checks.yml` installs Bandit with `pip install bandit==1.9.4` and does not pin an artifact hash. The checkout action and the gitleaks archive are pinned by hash. The Bandit install line is unchanged.
+`.github/workflows/checks.yml` installs Bandit from `ci/bandit-requirements.txt` with `--require-hashes`. Pull request #9 added that pin. This review originally recorded an unpinned `pip install bandit==1.9.4`. The checkout action and the gitleaks archive are pinned by hash.
 
 ## Checks this review could not run
 

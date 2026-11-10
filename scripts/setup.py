@@ -124,6 +124,7 @@ def remove(dry_run):
             safe_directory(path.parent)
         safe_destination(path)
     leave_modprobe = MODPROBE.exists() and MODPROBE.read_bytes() != KERNEL_OPTION
+    managed_kernel = MODPROBE.exists() and not leave_modprobe
     if leave_modprobe:
         print(f"Leaving unmanaged modprobe file in place: {MODPROBE}")
     if UNIT.exists():
@@ -145,8 +146,10 @@ def remove(dry_run):
     systemctl("daemon-reload")
     if leave_modprobe:
         print("Removed the system component. The unmanaged modprobe file was kept, so its kernel option is unchanged. Remove the shell plugin separately.")
-    else:
+    elif managed_kernel:
         print("Removed the system component. Reboot to clear its kernel option; remove the shell plugin separately.")
+    else:
+        print("Removed the system component. No OmaFans kernel option file was present. Remove the shell plugin separately.")
 
 
 def main(argv=None):

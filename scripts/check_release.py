@@ -34,6 +34,7 @@ def check():
     require('"-I", "-S"' in (ROOT / "fanctl.py").read_text(), "CLI re-exec must pass -I -S")
     require("sys.flags.isolated and sys.flags.no_site" in (ROOT / "omafans.py").read_text(), "Daemon must refuse a site-enabled interpreter")
     require("/usr/bin/python3 -I -S scripts/setup.py" in (ROOT / "README.md").read_text(), "Privileged setup command must include -I -S")
+    require("python3 -I -S" in (ROOT / "docs/SECURITY_REVIEW.md").read_text(), "Security review must describe python3 -I -S")
     workflow = (ROOT / ".github/workflows/checks.yml").read_text()
     require("pip install --require-hashes --only-binary=:all: -r ci/bandit-requirements.txt" in workflow, "Bandit install must use hashed wheels")
     require((ROOT / "ci/bandit-requirements.txt").is_file(), "Missing hashed Bandit requirements")
