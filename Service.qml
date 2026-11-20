@@ -15,14 +15,19 @@ Item {
   property var temperature: null
   property int manualPercent: 60
   property var curve: [[40, 30], [55, 40], [65, 60], [75, 80], [85, 100]]
-  property string error: ""
+  property string helperError: ""
+  property string autoError: ""
+  readonly property string error: autoError || helperError
   property string notice: ""
   property var cpuTemperature: null
-  readonly property bool busy: helper.running
+  readonly property bool busy: activeVerb !== ""
   readonly property string helperPath: decodeURIComponent(Qt.resolvedUrl("omafans.py").toString().replace(/^file:\/\//, ""))
   readonly property var pythonCommand: ["/usr/bin/python3", "-I", "-S", helperPath]
   property string pendingPayload: ""
+  property bool pendingAuto: false
   property string activeVerb: ""
+  property bool activeAuto: false
+  property bool autoAwaitingConfirmation: false
   readonly property bool controlPending: pendingPayload !== ""
   property bool timedOut: false
 
@@ -34,7 +39,7 @@ Item {
     percent = null
     temperature = null
     cpuTemperature = null
-    error = message
+    helperError = message
   }
 
   function startHelper(args) {
@@ -48,51 +53,87 @@ Item {
   }
 
   function refresh() {
-    if (helper.running) return
-    startHelper(["heartbeat"])
+    if (busy) return
+    startHelper([autoAwaitingConfirmation ? "status" : "heartbeat"])
   }
 
-  function startSet(data) {
+  function startSet(data, auto) {
+    activeAuto = auto
     startHelper(["set", data])
-    return true
   }
 
   function setControl(payload) {
     var data = JSON.stringify(payload)
     if (!data || data.length > 2048) return false
-    if (helper.running) {
-      pendingPayload = data
-      return true
+    var auto = !!payload && payload.mode === "auto"
+    if (auto) {
+      autoAwaitingConfirmation = true
+    } else if (autoAwaitingConfirmation) {
+      return false
     }
-    return startSet(data)
+    if (busy) {
+      pendingPayload = data
+      pendingAuto = auto
+    } else {
+      startSet(data, auto)
+    }
+    return true
   }
 
-  function flushQueued(data) {
-    if (timedOut) return
-    if (helper.running) {
-      pendingPayload = data
-      return
-    }
-    startSet(data)
+  function autoConfirmed(parsed, exitCode) {
+    if (!parsed || exitCode !== 0 || parsed.ok !== true || parsed.service !== true
+        || parsed.control_enabled !== true || parsed.mode !== "auto") return false
+    if (parsed.firmware_auto !== undefined) return parsed.firmware_auto === true
+    // Older daemons signal verified firmware Auto in a successful Auto set
+    // reply with no fan duty, fallback notice or overheat error.
+    return activeAuto && parsed.percent === null && parsed.notice === "" && parsed.error === ""
   }
 
   function completeHelper(raw, exitCode) {
-    var queued = pendingPayload
-    pendingPayload = ""
-    // onExited runs only after the helper has stopped. A fixture caller may
-    // still report it running, so clear that before the queued command starts.
+    if (!busy) return
+    // The QtTest process stub can be completed without first clearing running.
     if (helper.running) helper.running = false
-    applyStatus(raw, exitCode)
-    if (queued !== "" && !timedOut) flushQueued(queued)
+    var parsed = applyStatus(raw, exitCode)
+    if (autoAwaitingConfirmation && (activeAuto || activeVerb === "status")) {
+      if (autoConfirmed(parsed, exitCode)) {
+        autoAwaitingConfirmation = false
+        autoError = ""
+        notice = notice || "Firmware Auto confirmed"
+        pendingPayload = ""
+        pendingAuto = false
+      } else if (activeAuto && !timedOut) {
+        var detail = helperError || notice
+        autoError = "Firmware Auto unconfirmed" + (detail ? ": " + detail.slice(0, 223) : "")
+      }
+    }
+    activeVerb = ""
+    activeAuto = false
+    if (pendingPayload !== "") {
+      var queued = pendingPayload
+      var queuedAuto = pendingAuto
+      pendingPayload = ""
+      pendingAuto = false
+      startSet(queued, queuedAuto)
+    }
+  }
+
+  function timeoutHelper() {
+    if (!busy || timedOut) return
+    timedOut = true
+    if (!pendingAuto) pendingPayload = ""
+    unavailable("OmaFans helper timed out")
+    if (activeAuto) autoError = "Firmware Auto unconfirmed: helper timed out"
+    if (helper.running) helper.signal(9)
+    else completeHelper("", 1)
   }
 
   function applyStatus(raw, exitCode) {
-    if (timedOut) return
+    if (timedOut) return null
     var parsed = null
     try { parsed = JSON.parse(String(raw)) } catch (e) { parsed = null }
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
       unavailable("OmaFans helper returned invalid status")
-      return
+      return null
     }
     available = parsed.available === true
     serviceUp = parsed.service === true
@@ -105,9 +146,10 @@ Item {
     if (typeof parsed.manual_percent === "number" && isFinite(parsed.manual_percent))
       manualPercent = Math.max(30, Math.min(100, Math.round(parsed.manual_percent)))
     if (Array.isArray(parsed.curve) && parsed.curve.length === 5) curve = parsed.curve
-    error = typeof parsed.error === "string" ? parsed.error.slice(0, 250) : ""
-    if (exitCode !== 0 && error === "") error = "OmaFans request failed"
+    helperError = typeof parsed.error === "string" ? parsed.error.slice(0, 250) : ""
+    if (exitCode !== 0 && helperError === "") helperError = "OmaFans request failed"
     notice = typeof parsed.notice === "string" ? parsed.notice.slice(0, 250) : ""
+    return parsed
   }
 
   Timer {
@@ -119,13 +161,8 @@ Item {
   }
   Timer {
     interval: 5000
-    running: helper.running
-    onTriggered: {
-      root.timedOut = true
-      root.pendingPayload = ""
-      helper.signal(9)
-      root.unavailable("OmaFans helper timed out")
-    }
+    running: root.busy
+    onTriggered: root.timeoutHelper()
   }
   Process {
     id: helper
