@@ -153,6 +153,7 @@ class ControllerTests(unittest.TestCase):
         self.assertTrue(self.control.status()["control_enabled"])
 
     def test_sensor_failure_with_only_manual_fallback_never_auto_recovers(self):
+        self.hardware.values["pwm1_enable"] = 1
         self.hardware.failed.add(("pwm1_enable", 2))
         self.hardware.temp = None
         self.control.tick()
@@ -238,6 +239,7 @@ class ControllerTests(unittest.TestCase):
         self.assertIn("verification failed", self.control.error)
 
     def test_auto_unsupported_uses_highest_normal_speed_and_keeps_watchdog(self):
+        self.hardware.values["pwm1_enable"] = 1
         self.hardware.failed.add(("pwm1_enable", 2))
         self.assertTrue(self.control.safe())
         self.assertEqual(self.hardware.values["pwm1"], 255)
@@ -245,6 +247,7 @@ class ControllerTests(unittest.TestCase):
         self.assertIn("Firmware Auto unavailable", self.control.status()["notice"])
 
     def test_failed_fallback_is_visible(self):
+        self.hardware.values["pwm1_enable"] = 1
         self.hardware.failed.update({("pwm1_enable", 2), ("pwm1_enable", 1)})
         self.control.fail("fixture write failure")
         self.assertIn("safety fallback failed", self.control.error)

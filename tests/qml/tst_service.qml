@@ -74,11 +74,11 @@ TestCase {
   function test_timeout_drops_a_queued_control() {
     service.refresh()
     service.setControl({ mode: "manual", manual_percent: 50 })
-    service.timedOut = true
+    service.timeoutHelper()
     service.completeHelper("{}", 1)
     compare(service.controlPending, false)
-    compare(service.activeVerb, "heartbeat")
-    wait(50)
+    compare(service.busy, false)
+    service.refresh()
     compare(service.activeVerb, "heartbeat")
   }
   function test_helper_uses_isolated_interpreter() {

@@ -166,17 +166,20 @@ maximum RPM. The temperature curve is stepped, not interpolated.
 Manual requests and curve edits live in daemon memory. Restarting the daemon
 returns to Auto and the default curve. The widget sends a heartbeat every
 three seconds; after a 15-second lapse, the next controller tick (within about
-two seconds) returns to Auto. A later heartbeat does not resume an old manual
-request. Closing the popup leaves control active; disabling the plugin stops
-its heartbeat.
+two seconds) returns to Auto. A later heartbeat or a settings update without
+an explicit mode selection cannot resume expired Manual or Curve control.
+Closing the popup leaves control active; disabling the plugin stops its
+heartbeat.
 
 The daemon arms a 45-second kernel watchdog before every manual operation.
 Its recovery is driver-specific: on the tested T480s, expiry preserved an
 already-selected highest normal level 7 rather than switching it to Auto.
 Invalid sensor data or a failed watchdog/write/read-back latches a fault and
-attempts firmware Auto, with highest normal speed as a fallback. After that
-attempt it stops making repeated writes so it cannot indefinitely postpone the
-watchdog. A temporary temperature-sensor failure can recover only if firmware
+attempts firmware Auto. If Auto cannot be confirmed, the daemon must arm the
+watchdog successfully before selecting manual mode and requesting the highest
+normal speed. It reports failed writes or read-back and stops retrying hardware
+writes after a fault, allowing an armed watchdog to expire. A temporary
+temperature-sensor failure can recover only if firmware
 Auto was verified and watchdog disarming succeeded: three valid readings below
 92°C, at least two seconds apart with no gap over four seconds, must confirm
 Auto remains active. Control then becomes available in **Auto**; choose Manual
@@ -198,9 +201,12 @@ python3 fanctl.py status
 omarchy-shell community.omafans.service status
 ```
 
-IPC `set` returns `queued` when the helper has accepted the request. A click
-during a status refresh is kept and sent when that refresh finishes, instead
-of being dropped. The following status shows whether the daemon applied it.
+IPC `set` returns `queued` when the helper has accepted the request. An Auto
+request takes priority over other queued settings and is sent when the active
+helper exits, even after a timeout. While confirmation is pending, the widget
+uses read-only status requests in place of lease-renewing heartbeats. The
+widget reports whether firmware Auto was confirmed and shows failures in the
+panel.
 
 ## Update
 

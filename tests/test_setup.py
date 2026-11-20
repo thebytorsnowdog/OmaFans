@@ -43,14 +43,15 @@ class SetupTests(unittest.TestCase):
         self.assertEqual(list(self.root.iterdir()), [])
 
     def test_unprivileged_dry_run_allows_a_site_enabled_interpreter(self):
-        with patch.object(setup.pwd, "getpwnam", return_value=self.account), patch("builtins.print"):
+        with patch.object(setup.os, "geteuid", return_value=1000), patch.object(setup.pwd, "getpwnam", return_value=self.account), patch("builtins.print"):
             self.assertEqual(setup.main(["install", "--user", "fixture", "--dry-run"]), 0)
 
     def test_root_setup_refuses_site_enabled_interpreter(self):
-        flags = SimpleNamespace(isolated=False, no_site=False)
-        with patch.object(setup.os, "geteuid", return_value=0), patch.object(setup.sys, "flags", flags), patch.object(setup, "install") as install, patch("builtins.print"):
+        interpreter = SimpleNamespace(flags=SimpleNamespace(isolated=False, no_site=False), stderr=setup.sys.stderr)
+        with patch.object(setup.os, "geteuid", return_value=0), patch.object(setup, "sys", interpreter), patch.object(setup, "install") as install, patch("builtins.print") as printed:
             self.assertEqual(setup.main(["install", "--user", "fixture", "--dry-run"]), 1)
         install.assert_not_called()
+        self.assertIn("privileged setup must be started with /usr/bin/python3 -I -S", printed.call_args.args[0])
 
     def test_root_controller_is_rejected(self):
         with patch.object(setup.pwd, "getpwnam", return_value=SimpleNamespace(pw_uid=0,pw_gid=0)), self.assertRaises(ValueError):
