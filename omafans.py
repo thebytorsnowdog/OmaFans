@@ -313,38 +313,62 @@ class Controller:
         self.error = ""
         self.notice = ""
         self.fault = False
+        self.auto_restored = False
         self.sensor_recoverable = False
         self.sensor_good_samples = 0
         self.sensor_last_sample = None
 
     def safe(self):
-        """Firmware auto, or highest normal speed if auto is unsupported.
+        """Prefer confirmed firmware Auto, with a watchdog-backed fallback.
 
         Never disarm the watchdog until automatic mode is read back. Never
         claim a fallback succeeded just because it was attempted.
         """
         hw = self.hardware
         self.state["mode"] = "auto"
-        if hw.write("pwm1_enable", 2) and hw.read("pwm1_enable") == 2:
-            self.notice = ""
-            return hw.watchdog(0)
-        self.notice = "Firmware Auto unavailable; highest normal fan speed requested"
-        armed = hw.watchdog(WATCHDOG_SECONDS)
-        enabled = hw.write("pwm1_enable", 1)
-        full = hw.write("pwm1", 255) if enabled else False
-        return armed and enabled and full and hw.read("pwm1") == 255
+        self.auto_restored = False
+        auto_written = hw.write("pwm1_enable", 2)
+        observed_mode = hw.read("pwm1_enable")
+        if observed_mode == 2:
+            self.notice = "" if auto_written else "Firmware Auto write failed; existing Auto confirmed"
+            if hw.watchdog(0):
+                self.auto_restored = True
+                return True
+            self.notice = (self.notice or "Firmware Auto confirmed") + "; watchdog disarm failed"
+            return False
 
-    def fail(self, message, sensor=False):
+        auto_result = "read-back failed" if auto_written else "write failed"
+        self.notice = f"Firmware Auto unavailable ({auto_result})"
+        if not hw.watchdog(WATCHDOG_SECONDS):
+            mode = "manual mode observed" if observed_mode == 1 else "hardware mode unconfirmed"
+            self.notice += f"; watchdog arm failed; manual writes skipped; {mode}"
+            return False
+        self.notice += "; watchdog armed"
+        if not hw.write("pwm1_enable", 1):
+            self.notice += "; manual mode write failed"
+            return False
+        if not hw.write("pwm1", 255):
+            self.notice += "; manual mode write succeeded; highest normal speed write failed"
+            return False
+        if hw.read("pwm1_enable") != 1 or hw.read("pwm1") != 255:
+            self.notice += "; manual mode and speed writes succeeded; read-back failed"
+            return False
+        self.notice += "; manual mode and highest normal speed confirmed"
+        return True
+
+    def fail(self, message, sensor=False, *, restore=True):
         self.fault = True
         self.error = message
-        rescued = self.safe()
+        rescued = restore and self.safe()
         # Retry sensor observation only after verified firmware Auto AND a
         # successful watchdog disarm. Manual fallback cannot safely recover.
-        self.sensor_recoverable = sensor and rescued and not self.notice
+        self.sensor_recoverable = sensor and rescued and self.auto_restored
         self.sensor_good_samples = 0
         self.sensor_last_sample = None
         if not rescued:
-            self.error += "; safety fallback failed"
+            self.error += f"; safety fallback failed: {self.notice}"
+        elif self.notice:
+            self.error += f"; {self.notice}"
         if self.sensor_recoverable:
             self.error += "; firmware Auto active; waiting for stable readings"
         print("OmaFans: " + self.error, file=sys.stderr, flush=True)
@@ -390,6 +414,9 @@ class Controller:
               file=sys.stderr, flush=True)
         return True
 
+    def lease_current(self, now):
+        return self.last_heartbeat is not None and 0 <= now - self.last_heartbeat <= HEARTBEAT_TIMEOUT
+
     def tick(self):
         hw = self.hardware
         if self.fault:
@@ -402,7 +429,6 @@ class Controller:
         cpu = hw.cpu_temperature()
         if not plausible_temperature(cpu):
             cpu = None
-        age = None if self.last_heartbeat is None else self.clock() - self.last_heartbeat
         if temperature is None:
             return self.fail("Temperature sensor unavailable", sensor=True)
         # temp1 can lag the package. A hot CPU still forces the highest normal level.
@@ -413,10 +439,10 @@ class Controller:
                 self.error = "High temperature: highest normal fan speed requested"
             else:
                 self.error = "High CPU temperature: highest normal fan speed requested"
-        elif age is None or not 0 <= age <= HEARTBEAT_TIMEOUT or self.state["mode"] == "auto":
+        elif self.state["mode"] == "auto" or not self.lease_current(self.clock()):
             self.error = ""
             if not self.safe():
-                return self.fail("Unable to restore automatic fan control")
+                return self.fail("Unable to restore automatic fan control", restore=False)
             return True
         else:
             self.error = ""
@@ -447,6 +473,7 @@ class Controller:
             cpu = None
         return {**self.state, "available": hw.available, "service": True,
                 "control_enabled": hw.control_ready() and not self.fault,
+                "firmware_auto": enable == 2,
                 "rpm": hw.read("fan1_input"),
                 "percent": round(pwm * 100 / 255) if pwm is not None and enable == 1 else None,
                 "temperature": temp / 1000 if temp is not None else None,
@@ -460,17 +487,18 @@ class Controller:
         allowed = {"command", "settings"} if command == "set" else {"command"}
         if set(request) - allowed:
             raise ValueError("Unknown request field")
-        if command == "set":
-            state = validate_update(request.get("settings"), self.state)
-            if self.fault:
-                return {**self.status(), "ok": False}
-            self.state = state
         if command in ("heartbeat", "set"):
-            if command == "heartbeat" and self.last_heartbeat is not None:
-                age = self.clock() - self.last_heartbeat
-                if not 0 <= age <= HEARTBEAT_TIMEOUT:
-                    self.state["mode"] = "auto"
-            self.last_heartbeat = self.clock()
+            now = self.clock()
+            state = self.state
+            if not self.lease_current(now):
+                # Preserve the settings but require an explicit mode to resume control.
+                state = {**state, "mode": "auto"}
+            if command == "set":
+                state = validate_update(request.get("settings"), state)
+                if self.fault:
+                    return {**self.status(), "ok": False}
+            self.state = state
+            self.last_heartbeat = now
         good = self.tick() if command == "set" else not self.fault
         return {**self.status(), "ok": good}
 
@@ -587,7 +615,7 @@ def serve():
             safe = controller.safe()
             Path(SOCKET_PATH).unlink(missing_ok=True)
             if not safe:
-                print("OmaFans: safety fallback failed during shutdown", file=sys.stderr)
+                print(f"OmaFans: safety fallback failed during shutdown: {controller.notice}", file=sys.stderr)
     return 0 if safe else 1
 
 
@@ -672,7 +700,13 @@ def main(argv=None):
             raise ValueError("Root privileges required for the system daemon")
         if args.command == "release":
             hw = Hardware()
-            return 0 if not hw.available or Controller(hw).safe() else 1
+            if not hw.available:
+                return 0
+            controller = Controller(hw)
+            safe = controller.safe()
+            if controller.notice:
+                print(f"OmaFans: {controller.notice}", file=sys.stderr)
+            return 0 if safe else 1
         return serve()
     except (ValueError, OSError) as exc:
         print(f"OmaFans: {exc}", file=sys.stderr)

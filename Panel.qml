@@ -42,7 +42,7 @@ Panel {
   readonly property string statusError: service ? service.error : ""
   readonly property string notice: service ? service.notice : ""
   readonly property bool busy: service ? service.busy : false
-  readonly property bool canControl: controlEnabled && !busy
+  readonly property bool canControl: controlEnabled && !busy && !service.autoAwaitingConfirmation
   readonly property bool autoUsable: serviceUp
 
   property int manualDraft: 60
